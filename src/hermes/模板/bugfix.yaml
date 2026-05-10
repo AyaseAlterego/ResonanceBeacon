@@ -1,0 +1,62 @@
+# Bug修复流水线模板
+# 用于快速修复bug的简化流程
+
+name: "Bug修复流水线"
+description: "快速修复bug的简化流程"
+
+stages:
+  # 阶段1：分析
+  - id: analysis
+    name: "问题分析"
+    type: sequential
+    tasks:
+      - id: analyze_bug
+        name: "分析bug原因"
+        type: requirements_engineering
+        category: exploration
+        capabilities:
+          - code_analysis
+          - debugging
+        estimated_tokens: 1500
+
+  # 阶段2：修复
+  - id: fix
+    name: "实现修复"
+    type: sequential
+    tasks:
+      - id: implement_fix
+        name: "编写修复代码"
+        type: code_generation
+        category: quick
+        capabilities:
+          - code_generation
+          - bug_fix
+        estimated_tokens: 2000
+        depends_on:
+          - analyze_bug
+
+  # 阶段3：验证
+  - id: verify
+    name: "验证修复"
+    type: sequential
+    tasks:
+      - id: test_fix
+        name: "测试修复"
+        type: test_generation
+        category: utility
+        capabilities:
+          - test_generation
+          - regression_testing
+        estimated_tokens: 1500
+        depends_on:
+          - implement_fix
+
+      - id: code_review
+        name: "代码审查"
+        type: code_review
+        category: advisor
+        capabilities:
+          - code_review
+        estimated_tokens: 2000
+        depends_on:
+          - test_fix

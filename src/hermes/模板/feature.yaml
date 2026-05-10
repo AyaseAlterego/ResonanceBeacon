@@ -1,0 +1,164 @@
+# 功能开发流水线模板
+# 用于开发新功能的完整流程
+
+name: "功能开发流水线"
+description: "从需求分析到交付的完整功能开发流程"
+
+stages:
+  # 阶段1：需求分析
+  - id: requirements
+    name: "需求分析"
+    type: sequential
+    tasks:
+      - id: analyze_requirements
+        name: "分析和记录需求"
+        type: requirements_engineering
+        category: exploration
+        capabilities:
+          - requirements_engineering
+          - documentation
+        estimated_tokens: 2000
+
+  # 阶段2：设计
+  - id: design
+    name: "架构设计"
+    type: sequential
+    tasks:
+      - id: architecture_design
+        name: "设计系统架构"
+        type: architecture_design
+        category: ultrabrain
+        capabilities:
+          - architecture_design
+          - system_design
+        estimated_tokens: 3000
+
+      - id: api_design
+        name: "设计API接口"
+        type: api_design
+        category: specialist
+        capabilities:
+          - api_design
+          - documentation
+        estimated_tokens: 2000
+        depends_on:
+          - architecture_design
+
+  # 阶段3：开发
+  - id: development
+    name: "开发实现"
+    type: parallel
+    tasks:
+      - id: backend_development
+        name: "后端开发"
+        type: code_generation
+        category: deep
+        capabilities:
+          - code_generation
+          - python
+          - api_implementation
+        estimated_tokens: 5000
+
+      - id: frontend_development
+        name: "前端开发"
+        type: code_generation
+        category: visual_engineering
+        capabilities:
+          - code_generation
+          - react
+          - typescript
+        estimated_tokens: 5000
+
+      - id: database_development
+        name: "数据库开发"
+        type: code_generation
+        category: specialist
+        capabilities:
+          - code_generation
+          - sql
+          - database_design
+        estimated_tokens: 3000
+
+  # 阶段4：测试
+  - id: testing
+    name: "测试验证"
+    type: sequential
+    tasks:
+      - id: unit_tests
+        name: "单元测试"
+        type: test_generation
+        category: utility
+        capabilities:
+          - test_generation
+          - pytest
+        estimated_tokens: 3000
+        depends_on:
+          - backend_development
+          - frontend_development
+          - database_development
+
+      - id: integration_tests
+        name: "集成测试"
+        type: test_generation
+        category: utility
+        capabilities:
+          - test_generation
+          - integration_testing
+        estimated_tokens: 4000
+        depends_on:
+          - unit_tests
+
+  # 阶段5：审查
+  - id: review
+    name: "代码审查"
+    type: sequential
+    tasks:
+      - id: code_review
+        name: "代码审查"
+        type: code_review
+        category: advisor
+        capabilities:
+          - code_review
+          - best_practices
+        estimated_tokens: 5000
+        depends_on:
+          - integration_tests
+
+      - id: security_audit
+        name: "安全审计"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - security_analysis
+          - vulnerability_detection
+        estimated_tokens: 3000
+        depends_on:
+          - code_review
+
+  # 阶段6：交付
+  - id: delivery
+    name: "交付部署"
+    type: sequential
+    tasks:
+      - id: documentation
+        name: "编写文档"
+        type: documentation
+        category: utility
+        capabilities:
+          - documentation
+          - technical_writing
+        estimated_tokens: 3000
+        depends_on:
+          - security_audit
+
+      - id: deployment_prep
+        name: "部署准备"
+        type: deployment
+        category: utility
+        capabilities:
+          - deployment
+          - docker
+          - kubernetes
+        estimated_tokens: 2000
+        depends_on:
+          - documentation

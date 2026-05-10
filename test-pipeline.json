@@ -1,0 +1,19 @@
+{
+  "id": "test-pipeline",
+  "name": "测试流水线",
+  "stages": [
+    {
+      "id": "stage1",
+      "name": "阶段1",
+      "type": "sequential",
+      "tasks": [
+        {
+          "id": "task1",
+          "name": "任务1",
+          "type": "general",
+          "category": "utility"
+        }
+      ]
+    }
+  ]
+}
