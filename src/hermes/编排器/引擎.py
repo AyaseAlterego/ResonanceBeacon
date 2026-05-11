@@ -8,6 +8,7 @@ from .状态机 import 流水线状态机
 from ..智能体 import 智能体注册表, 类别路由器, 任务需求
 from ..钩子 import 钩子组合器, 钩子上下文, 钩子事件
 from ..后台 import 后台任务管理器
+from ..接口.websocket import 管理器, 频道类型
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +39,33 @@ class 流水线引擎:
         self,
         智能体注册表: 智能体注册表,
         类别路由器: 类别路由器,
-        后台管理器: 后台任务管理器
+        后台管理器: 后台任务管理器,
+        项目路径: str = ""
     ):
         self.智能体注册表 = 智能体注册表
         self.类别路由器 = 类别路由器
         self.后台管理器 = 后台管理器
+        self.项目路径 = 项目路径
         self.状态机 = 流水线状态机()
         self.钩子组合器 = 钩子组合器()
+
+    async def 广播流水线状态(self, 流水线ID: str, 状态: str, 附加数据: dict = None):
+        数据 = {"流水线ID": 流水线ID, "状态": 状态}
+        if 附加数据:
+            数据.update(附加数据)
+        await 管理器.广播消息(频道类型.流水线状态, 数据)
+
+    async def 广播智能体状态(self, 智能体ID: str, 状态: str, 附加数据: dict = None):
+        数据 = {"智能体ID": 智能体ID, "状态": 状态}
+        if 附加数据:
+            数据.update(附加数据)
+        await 管理器.广播消息(频道类型.智能体状态, 数据)
+
+    async def 广播审批请求(self, 审批ID: str, 流水线ID: str, 附加数据: dict = None):
+        数据 = {"审批ID": 审批ID, "流水线ID": 流水线ID}
+        if 附加数据:
+            数据.update(附加数据)
+        await 管理器.广播消息(频道类型.审批通知, 数据)
 
     async def 运行流水线(
         self,
@@ -79,9 +100,9 @@ class 流水线引擎:
         self.钩子组合器.触发钩子(钩子字典, 钩子事件.流水线已启动, 流水线定义)
 
         try:
-            # 设置初始状态
-            self.状态机.设置状态(流水线ID, "pending")
-            self.状态机.转换状态(流水线ID, "running")
+            await self.状态机.设置状态(流水线ID, "pending")
+            await self.状态机.转换状态(流水线ID, "running")
+            await self.广播流水线状态(流水线ID, "running", {"流水线名称": 流水线名称})
 
             # 获取阶段列表
             阶段列表 = 流水线定义.get("stages", [])
@@ -102,8 +123,8 @@ class 流水线引擎:
                 )
 
                 if 阶段结果["状态"] != "completed":
-                    # 阶段失败或取消
-                    self.状态机.转换状态(流水线ID, "failed")
+                    await self.状态机.转换状态(流水线ID, "failed")
+                    await self.广播流水线状态(流水线ID, "failed", {"阶段ID": 阶段定义.get("id", ""), "错误": 阶段结果.get("错误")})
                     self.钩子组合器.触发钩子(
                         钩子字典,
                         钩子事件.流水线已失败,
@@ -121,8 +142,8 @@ class 流水线引擎:
 
                 完成阶段数 += 1
 
-            # 所有阶段完成
-            self.状态机.转换状态(流水线ID, "completed")
+            await self.状态机.转换状态(流水线ID, "completed")
+            await self.广播流水线状态(流水线ID, "completed", {"完成阶段数": 完成阶段数, "阶段数": len(阶段列表)})
             self.钩子组合器.触发钩子(
                 钩子字典,
                 钩子事件.流水线已完成,
@@ -139,8 +160,8 @@ class 流水线引擎:
             )
 
         except Exception as e:
-            logger.error(f"流水线 {流水线ID} 执行异常: {e}", exc_info=True)
-            self.状态机.转换状态(流水线ID, "failed")
+            await self.状态机.转换状态(流水线ID, "failed")
+            await self.广播流水线状态(流水线ID, "failed", {"错误": str(e)})
             self.钩子组合器.触发钩子(
                 钩子字典,
                 钩子事件.流水线已失败,
@@ -179,17 +200,19 @@ class 流水线引擎:
                 return {"状态": "completed", "错误": None}
 
             if 阶段类型 == "parallel":
-                # 并发执行任务
-                任务结果列表 = await asyncio.gather(
-                    *[self._执行任务(流水线ID, 阶段ID, 任务定义, 钩子字典, 上下文)
-                      for 任务定义 in 任务列表],
-                    return_exceptions=True
-                )
+                任务结果列表 = []
+                async with asyncio.TaskGroup() as 任务组:
+                    任务对象列表 = [
+                        任务组.create_task(
+                            self._执行任务(流水线ID, 阶段ID, 任务定义, 钩子字典, 上下文)
+                        )
+                        for 任务定义 in 任务列表
+                    ]
 
-                # 检查任务结果
-                for 结果 in 任务结果列表:
-                    if isinstance(结果, Exception):
-                        return {"状态": "failed", "错误": str(结果)}
+                for 任务对象 in 任务对象列表:
+                    if 任务对象.exception():
+                        return {"状态": "failed", "错误": str(任务对象.exception())}
+                    结果 = 任务对象.result()
                     if 结果["状态"] != "completed":
                         return 结果
 
@@ -230,8 +253,9 @@ class 流水线引擎:
         # 触发任务开始钩子
         self.钩子组合器.触发钩子(钩子字典, 钩子事件.任务已开始, 任务定义)
 
+        智能体 = None
+
         try:
-            # 根据类别选择智能体
             需求 = 任务需求(
                 能力列表=任务定义.get("capabilities", []),
                 预估令牌数=任务定义.get("estimated_tokens", 1000)
@@ -250,13 +274,25 @@ class 流水线引擎:
 
             logger.info(f"为任务 {任务ID} 选择智能体: {智能体.智能体ID}")
 
+            await self.广播智能体状态(智能体.智能体ID, "busy", {"任务ID": 任务ID, "流水线ID": 流水线ID})
+
             # 执行任务（后台执行）
             async def 执行函数():
+                from ..智能体.基础 import 上下文包 as 智能体上下文包
+                智能体上下文 = 智能体上下文包(
+                    流水线ID=流水线ID,
+                    阶段ID=阶段ID,
+                    任务ID=任务ID,
+                    输入数据=任务定义.get("input", {}),
+                    之前的制品=[],
+                    元数据={"任务名称": 任务名称, "任务类型": 任务定义.get("type", "")},
+                    项目路径=self.项目路径
+                )
                 return await 智能体.执行任务(
                     任务ID,
                     任务定义.get("type", "general"),
                     任务定义.get("input", {}),
-                    上下文
+                    智能体上下文
                 )
 
             后台任务ID = await self.后台管理器.启动任务(
@@ -278,10 +314,13 @@ class 流水线引擎:
             self.钩子组合器.触发钩子(钩子字典, 钩子事件.任务已完成, 任务定义, 结果)
 
             logger.info(f"任务 {任务ID} 完成")
+            await self.广播智能体状态(智能体.智能体ID, "idle", {"任务ID": 任务ID})
             return {"状态": "completed", "错误": None, "结果": 结果}
 
         except Exception as e:
             logger.error(f"任务 {任务ID} 执行异常: {e}", exc_info=True)
+            if 智能体 is not None:
+                await self.广播智能体状态(智能体.智能体ID, "idle", {"任务ID": 任务ID, "错误": str(e)})
             self.钩子组合器.触发钩子(
                 钩子字典,
                 钩子事件.任务已失败,
