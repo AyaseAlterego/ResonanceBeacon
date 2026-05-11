@@ -1,0 +1,26 @@
+appId: com.resonancebeacon.app
+productName: ResonanceBeacon
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.ts'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,tsconfig.electron.json}'
+  - '!{.eslintcache,eslint.config.js,postcss.config.js,tailwind.config.js}'
+  - '!{.gitignore,README.md}'
+win:
+  executableName: ResonanceBeacon
+nsis:
+  artifactName: ${name}-${version}-setup.${ext}
+  shortcutName: ${productName}
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  icon: build/icon.icns
+  target:
+    - dmg
+linux:
+  target:
+    - AppImage
+  category: Development
