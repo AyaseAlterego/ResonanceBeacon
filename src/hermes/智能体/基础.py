@@ -3,7 +3,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import AsyncIterator, Callable, Any, Optional
+from uuid import uuid4
 import logging
+
+from .提示词模板 import 提示词模板管理器
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +71,7 @@ class 上下文包:
     输入数据: dict[str, Any] = field(default_factory=dict)
     之前的制品: list[dict[str, Any]] = field(default_factory=list)
     元数据: dict[str, Any] = field(default_factory=dict)
+    项目路径: str = ""
 
 class 智能体适配器(ABC):
     """
@@ -139,6 +143,74 @@ class 智能体适配器(ABC):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__} id={self.智能体ID} category={self.类别.value}>"
+
+    def _提取制品(self, 内容: str) -> list[dict]:
+        制品列表 = []
+        在代码块中 = False
+        当前代码块 = []
+        当前语言 = "unknown"
+
+        for 行 in 内容.split('\n'):
+            if 行.startswith('```'):
+                if 在代码块中:
+                    代码 = '\n'.join(当前代码块)
+                    if 代码.strip():
+                        制品列表.append({"ID": str(uuid4()), "类型": "code", "语言": 当前语言, "内容": 代码, "路径": f"output_{当前语言}.txt"})
+                    当前代码块 = []
+                    当前语言 = "unknown"
+                else:
+                    标识 = 行[3:].strip().split()[0] if len(行) > 3 else ""
+                    当前语言 = 标识 if 标识 else "unknown"
+                在代码块中 = not 在代码块中
+            elif 在代码块中:
+                当前代码块.append(行)
+            else:
+                if 行.strip() and not 当前代码块:
+                    制品列表.append({"ID": str(uuid4()), "类型": "text", "语言": "unknown", "内容": 行, "路径": "output.txt"})
+
+        return 制品列表
+
+    def _构建提示词(self, 任务类型: str, 输入数据: dict[str, Any], 上下文: 上下文包) -> str:
+        模板名称 = self._提示词管理器.根据任务类型获取模板(任务类型)
+        上下文数据 = {
+            "需求描述": 输入数据.get("需求", 输入数据.get("description", "")),
+            "代码内容": 输入数据.get("代码", 输入数据.get("code", "")),
+            "代码语言": 输入数据.get("语言", 输入数据.get("language", "python")),
+            "项目上下文": str(上下文.元数据) if 上下文 and 上下文.元数据 else "",
+            "文档类型": 输入数据.get("文档类型", "API文档"),
+            "内容描述": 输入数据.get("内容", ""),
+            "目标受众": 输入数据.get("受众", "开发者"),
+            "系统需求": 输入数据.get("系统需求", ""),
+            "技术约束": 输入数据.get("技术约束", ""),
+            "预期规模": 输入数据.get("预期规模", "中等"),
+            "原始需求": 输入数据.get("原始需求", ""),
+            "项目背景": 输入数据.get("项目背景", ""),
+            "利益相关者": 输入数据.get("利益相关者", ""),
+            "测试框架": 输入数据.get("测试框架", "pytest"),
+        }
+        提示词结果 = self._提示词管理器.生成提示词(模板名称, 上下文数据)
+        if 提示词结果:
+            return 提示词结果["用户提示词"]
+        return self._生成默认提示词(任务类型, 输入数据, 上下文)
+
+    def _生成默认提示词(self, 任务类型: str, 输入数据: dict[str, Any], 上下文: 上下文包) -> str:
+        部分 = ["你是一个专业的软件开发助手。"]
+        映射 = {
+            "code_generation": "请根据需求生成高质量的代码。",
+            "code_review": "请审查代码质量并提供改进建议。",
+            "test_generation": "请为给定代码生成全面的测试用例。",
+            "exploration": "请分析代码库并提供详细的分析报告。",
+            "code_explanation": "请详细解释代码的功能和逻辑。",
+            "requirements_engineering": "请分析需求并输出结构化文档。",
+            "architecture_design": "请设计系统架构。",
+        }
+        if 任务类型 in 映射:
+            部分.append(映射[任务类型])
+        if 输入数据:
+            部分.append("\n## 输入数据\n")
+            for 键, 值 in 输入数据.items():
+                部分.append(f"**{键}**: {值}")
+        return "\n".join(部分)
 
 class 智能体工厂(ABC):
     """智能体工厂抽象基类"""
