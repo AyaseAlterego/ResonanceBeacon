@@ -76,7 +76,9 @@ class 钩子组合器:
             for 钩子 in 已排序钩子:
                 if 钩子 and 钩子.事件 == 事件:
                     try:
-                        钩子.回调(*参数)
+                        结果 = 钩子.回调(*参数)
+                        if isinstance(结果, bool) and not 结果:
+                            logger.warning(f"钩子 {钩子.名称} 返回 False，继续执行")
                         logger.debug(f"钩子 {钩子.名称} 执行成功")
                     except Exception as e:
                         logger.error(

@@ -30,6 +30,8 @@ class 监控指标收集器:
         self._计数器: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
         self._仪表盘: dict[str, dict[str, float]] = defaultdict(lambda: defaultdict(float))
         self._直方图: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+        self._计数器标签: dict[str, dict[str, dict[str, str]]] = defaultdict(dict)
+        self._仪表盘标签: dict[str, dict[str, dict[str, str]]] = defaultdict(dict)
 
     def 注册指标(self, 指标定义: 指标):
         """注册指标"""
@@ -40,15 +42,21 @@ class 监控指标收集器:
         """递增计数器"""
         标签键 = str(sorted(标签.items())) if 标签 else ""
         self._计数器[名称][标签键] += 数值
+        if 标签:
+            self._计数器标签[名称][标签键] = 标签
 
     def 设置仪表盘(self, 名称: str, 数值: float, 标签: dict[str, str] | None = None):
         """设置仪表盘值"""
         标签键 = str(sorted(标签.items())) if 标签 else ""
         self._仪表盘[名称][标签键] = 数值
+        if 标签:
+            self._仪表盘标签[名称][标签键] = 标签
 
     def 记录直方图(self, 名称: str, 数值: float, 标签: dict[str, str] | None = None):
         """记录直方图值"""
         标签键 = str(sorted(标签.items())) if 标签 else ""
+        if len(self._直方图[名称][标签键]) > 1000:
+            self._直方图[名称][标签键].pop(0)
         self._直方图[名称][标签键].append(数值)
 
     def 获取指标值(self, 名称: str) -> dict[str, Any]:
@@ -96,15 +104,23 @@ class 监控指标收集器:
             输出.append(f"# TYPE {名称} counter")
             输出.append(f"# HELP {名称} {名称} counter")
             for 标签键, 值 in 计数器数据.items():
-                标签 = 标签键.strip("()") if 标签键 else ""
-                输出.append(f"{名称}{{{标签}}} {值}")
+                标签 = self._计数器标签[名称].get(标签键, {})
+                if 标签:
+                    标签字符串 = ','.join(f'{k}="{v}"' for k, v in 标签.items())
+                    输出.append(f"{名称}{{{标签字符串}}} {值}")
+                else:
+                    输出.append(f"{名称} {值}")
 
         for 名称, 仪表盘数据 in self._仪表盘.items():
             输出.append(f"# TYPE {名称} gauge")
             输出.append(f"# HELP {名称} {名称} gauge")
             for 标签键, 值 in 仪表盘数据.items():
-                标签 = 标签键.strip("()") if 标签键 else ""
-                输出.append(f"{名称}{{{标签}}} {值}")
+                标签 = self._仪表盘标签[名称].get(标签键, {})
+                if 标签:
+                    标签字符串 = ','.join(f'{k}="{v}"' for k, v in 标签.items())
+                    输出.append(f"{名称}{{{标签字符串}}} {值}")
+                else:
+                    输出.append(f"{名称} {值}")
 
         return "\n".join(输出)
 

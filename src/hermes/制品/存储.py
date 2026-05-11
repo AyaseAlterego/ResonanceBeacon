@@ -87,6 +87,14 @@ class 本地制品存储:
         except Exception as e:
             logger.error(f"保存制品索引失败: {e}")
 
+    def _校验路径安全(self, 名称: str) -> str:
+        安全名称 = 名称.replace('\\', '/').split('/')[-1]
+        if 安全名称 != 名称:
+            logger.warning(f"检测到路径穿越尝试，已截断: {名称} -> {安全名称}")
+        if '..' in 安全名称 or 安全名称.startswith('/') or 安全名称.startswith('\\'):
+            raise ValueError(f"非法的文件名: {名称}")
+        return 安全名称
+
     def 存储制品(
         self,
         名称: str,
@@ -106,6 +114,7 @@ class 本地制品存储:
         """
         from uuid import uuid4
         制品ID = str(uuid4())
+        名称 = self._校验路径安全(名称)
 
         # 计算内容哈希
         if isinstance(内容, str):

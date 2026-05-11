@@ -1,9 +1,10 @@
 """OpenCode适配器实现"""
 import time
 import asyncio
-from typing import AsyncIterator, Any, Optional
+from typing import AsyncIterator, Any
 import logging
 import json
+from pathlib import Path
 
 from ..基础 import (
     智能体适配器,
@@ -13,6 +14,7 @@ from ..基础 import (
     任务结果,
     上下文包
 )
+from ..提示词模板 import 提示词模板管理器
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,8 @@ class OpenCode适配器(智能体适配器):
         self._模型 = 模型
         self._配置 = 配置
         self._进程: asyncio.subprocess.Process | None = None
+        self._最后健康状态 = False
+        self._提示词管理器 = 提示词模板管理器()
 
     @property
     def 智能体ID(self) -> str:
@@ -74,19 +78,10 @@ class OpenCode适配器(智能体适配器):
         logger.info(f"OpenCode适配器初始化 (路径: {opencode_path}, 模型: {self._模型})")
 
     async def 健康检查(self) -> bool:
-        """检查OpenCode是否可用"""
-        try:
-            opencode_path = self._配置.get("path", "opencode")
-            进程 = await asyncio.create_subprocess_exec(
-                opencode_path, "version",
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
-            )
-            stdout, stderr = await asyncio.wait_for(进程.communicate(), timeout=5)
-            return 进程.returncode == 0
-        except Exception as e:
-            logger.error(f"OpenCode健康检查失败: {e}")
-            return False
+        opencode_path = self._配置.get("path", "opencode")
+        if Path(opencode_path).exists():
+            self._最后健康状态 = True
+        return self._最后健康状态
 
     async def 执行任务(
         self,
@@ -105,14 +100,14 @@ class OpenCode适配器(智能体适配器):
             进程 = await asyncio.create_subprocess_exec(
                 opencode_path, "run",
                 "--model", self._模型,
-                "--prompt", 提示词,
+                stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
 
             self._进程 = 进程
             stdout, stderr = await asyncio.wait_for(
-                进程.communicate(),
+                进程.communicate(提示词.encode()),
                 timeout=self._配置.get("timeout", 300)
             )
 
@@ -125,7 +120,7 @@ class OpenCode适配器(智能体适配器):
             结束时间 = time.time()
             耗时毫秒 = int((结束时间 - 开始时间) * 1000)
 
-            制品 = self._提取制品(输出文本, 任务类型)
+            制品 = self._提取制品(输出文本)
 
             return 任务结果(
                 任务ID=任务ID,
@@ -146,6 +141,7 @@ class OpenCode适配器(智能体适配器):
             结束时间 = time.time()
             耗时毫秒 = int((结束时间 - 开始时间) * 1000)
             logger.error(f"任务 {任务ID} 执行超时")
+            self._最后健康状态 = False
             return 任务结果(
                 任务ID=任务ID,
                 状态="failed",
@@ -182,24 +178,46 @@ class OpenCode适配器(智能体适配器):
         """流式执行任务"""
         提示词 = self._构建提示词(任务类型, 输入数据, 上下文)
         opencode_path = self._配置.get("path", "opencode")
+        超时 = self._配置.get("timeout", 300)
 
-        进程 = await asyncio.create_subprocess_exec(
-            opencode_path, "run",
-            "--model", self._模型,
-            "--prompt", 提示词,
-            "--stream",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
+        try:
+            进程 = await asyncio.create_subprocess_exec(
+                opencode_path, "run",
+                "--model", self._模型,
+                "--stream",
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
 
-        self._进程 = 进程
+            self._进程 = 进程
 
-        async for 行 in 进程.stdout:
-            文本 = 行.decode("utf-8", errors="replace").strip()
-            if 文本:
-                yield {"type": "text", "text": 文本}
+            进程.stdin.write(提示词.encode())
+            await 进程.stdin.drain()
+            进程.stdin.close()
 
-        yield {"type": "done", "任务ID": 任务ID}
+            try:
+                while True:
+                    行 = await asyncio.wait_for(
+                        进程.stdout.readline(), timeout=超时
+                    )
+                    if not 行:
+                        break
+                    文本 = 行.decode("utf-8", errors="replace").strip()
+                    if 文本:
+                        yield {"type": "text", "text": 文本}
+            except asyncio.TimeoutError:
+                logger.error(f"流式任务 {任务ID} 读取超时")
+                进程.kill()
+                yield {"type": "error", "错误": "流式执行超时"}
+                return
+
+            await 进程.wait()
+            yield {"type": "done", "任务ID": 任务ID}
+
+        except Exception as e:
+            logger.error(f"流式任务 {任务ID} 失败: {e}", exc_info=True)
+            yield {"type": "error", "错误": str(e)}
 
     async def 取消任务(self, 任务ID: str) -> bool:
         """取消任务"""
@@ -212,64 +230,4 @@ class OpenCode适配器(智能体适配器):
                 logger.error(f"取消任务 {任务ID} 失败: {e}")
         return False
 
-    def _构建提示词(self, 任务类型: str, 输入数据: dict[str, Any], 上下文: 上下文包) -> str:
-        """构建提示词"""
-        from ..提示词模板 import 提示词模板管理器
 
-        模板管理器 = 提示词模板管理器()
-
-        # 获取模板名称
-        模板名称 = 模板管理器.根据任务类型获取模板(任务类型)
-
-        # 构建上下文
-        上下文数据 = {
-            "需求描述": 输入数据.get("需求", 输入数据.get("description", "")),
-            "代码内容": 输入数据.get("代码", 输入数据.get("code", "")),
-            "代码语言": 输入数据.get("语言", 输入数据.get("language", "python")),
-            "项目上下文": str(上下文.元数据) if 上下文 and 上下文.元数据 else "",
-        }
-
-        # 生成提示词
-        提示词结果 = 模板管理器.生成提示词(模板名称, 上下文数据)
-
-        if 提示词结果:
-            return 提示词结果["用户提示词"]
-        else:
-            # 如果模板生成失败，使用默认提示词
-            部分 = ["你是一个专业的软件开发助手。"]
-
-            if 任务类型 == "code_generation":
-                部分.append("请根据需求生成高质量的代码。")
-            elif 任务类型 == "code_review":
-                部分.append("请审查代码质量并提供改进建议。")
-            elif 任务类型 == "exploration":
-                部分.append("请分析代码库并提供详细的分析报告。")
-
-            if 输入数据:
-                部分.append("\n## 输入数据\n")
-                for 键, 值 in 输入数据.items():
-                    部分.append(f"**{键}**: {值}")
-
-            return "\n".join(部分)
-
-    def _提取制品(self, 输出文本: str, 任务类型: str) -> list[dict]:
-        """从输出中提取制品"""
-        制品 = []
-        if "```" in 输出文本:
-            代码块 = []
-            在代码块中 = False
-
-            for 行 in 输出文本.split("\n"):
-                if 行.startswith("```"):
-                    在代码块中 = not 在代码块中
-                    if not 在代码块中 and 代码块:
-                        制品.append({
-                            "类型": "code",
-                            "内容": "\n".join(代码块),
-                            "语言": "unknown"
-                        })
-                        代码块 = []
-                elif 在代码块中:
-                    代码块.append(行)
-
-        return 制品

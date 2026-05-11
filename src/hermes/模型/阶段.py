@@ -1,6 +1,5 @@
 """阶段数据模型"""
 import uuid
-from datetime import datetime
 from enum import Enum
 from sqlalchemy import Column, String, Integer, DateTime, JSON, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.dialects.postgresql import UUID

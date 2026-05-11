@@ -1,5 +1,6 @@
 """后台任务管理器"""
 import asyncio
+import time
 from typing import Optional
 from uuid import uuid4
 import logging
@@ -31,6 +32,11 @@ class 后台任务管理器:
         self._任务状态: dict[str, str] = {}
         self._任务结果: dict[str, any] = {}
         self._任务错误: dict[str, Exception] = {}
+        self._运行中任务: dict[str, asyncio.Task] = {}
+        self._任务事件: dict[str, asyncio.Event] = {}
+        self._任务完成时间: dict[str, float] = {}
+        self._最大保留任务数: int = 1000
+        self._任务过期时间: int = 3600
 
     async def 启动任务(
         self,
@@ -64,12 +70,15 @@ class 后台任务管理器:
         if not await self.并发管理器.获取许可(智能体ID):
             raise RuntimeError(f"智能体 {智能体ID} 已达到最大并发数")
 
+        self._任务状态[任务ID] = "pending"
+        self._任务事件[任务ID] = asyncio.Event()
+
         # 启动后台任务
-        asyncio.create_task(
+        任务 = asyncio.create_task(
             self._执行任务(任务ID, 智能体ID, 执行函数, *参数, **关键字参数)
         )
+        self._运行中任务[任务ID] = 任务
 
-        self._任务状态[任务ID] = "pending"
         logger.info(f"启动后台任务: {任务ID} (智能体: {智能体ID})")
 
         return 任务ID
@@ -111,11 +120,18 @@ class 后台任务管理器:
             logger.error(f"任务 {任务ID} 失败: {e}", exc_info=True)
 
         finally:
+            self._运行中任务.pop(任务ID, None)
+            self._任务完成时间[任务ID] = time.time()
+            事件 = self._任务事件.get(任务ID)
+            if 事件:
+                事件.set()
             # 释放并发许可
             await self.并发管理器.释放许可(智能体ID)
+            self._清理过期任务()
 
     def 获取任务状态(self, 任务ID: str) -> Optional[str]:
         """获取任务状态"""
+        self._清理过期任务()
         return self._任务状态.get(任务ID)
 
     def 获取任务结果(self, 任务ID: str) -> Optional[any]:
@@ -134,27 +150,53 @@ class 后台任务管理器:
             True 如果任务成功完成，False 如果超时或失败
         """
         超时 = 超时 or self.任务超时
-        开始时间 = asyncio.get_event_loop().time()
-
-        while asyncio.get_event_loop().time() - 开始时间 < 超时:
+        try:
+            事件 = self._任务事件.get(任务ID)
+            if 事件:
+                await asyncio.wait_for(事件.wait(), timeout=超时)
             状态 = self.获取任务状态(任务ID)
-            if 状态 == "completed":
-                return True
-            elif 状态 == "failed":
-                return False
-            await asyncio.sleep(0.1)  # 100ms轮询间隔
+            return 状态 == "completed"
+        except (asyncio.TimeoutError, Exception):
+            return False
 
-        return False  # 超时
-
-    def 取消任务(self, 任务ID: str) -> bool:
+    async def 取消任务(self, 任务ID: str) -> bool:
         """取消任务"""
         状态 = self.获取任务状态(任务ID)
         if 状态 in ("pending", "running"):
             self._任务状态[任务ID] = "cancelled"
+            任务 = self._运行中任务.pop(任务ID, None)
+            if 任务:
+                任务.cancel()
+                try:
+                    await 任务
+                except asyncio.CancelledError:
+                    pass
+            if self._任务事件.get(任务ID):
+                self._任务事件[任务ID].set()
             logger.info(f"任务 {任务ID} 已取消")
             return True
         return False
 
+    def _清理过期任务(self):
+        """清理过期任务，防止内存泄漏"""
+        if len(self._任务状态) <= self._最大保留任务数:
+            return
+        now = time.time()
+        to_delete = []
+        for 任务ID, 状态 in list(self._任务状态.items()):
+            if 状态 in ("completed", "failed", "cancelled"):
+                完成时间 = self._任务完成时间.get(任务ID, 0)
+                if 完成时间 and now - 完成时间 > self._任务过期时间:
+                    to_delete.append(任务ID)
+        for 任务ID in to_delete:
+            del self._任务状态[任务ID]
+            self._任务结果.pop(任务ID, None)
+            self._任务错误.pop(任务ID, None)
+            self._任务事件.pop(任务ID, None)
+            self._任务完成时间.pop(任务ID, None)
+
     def 获取所有任务状态(self) -> dict[str, str]:
         """获取所有任务状态"""
+        # 清理过期任务
+        self._清理过期任务()
         return dict(self._任务状态)

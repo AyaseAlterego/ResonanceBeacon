@@ -109,7 +109,7 @@ class 健康检查器:
 
     async def _执行健康检查(self):
         """执行所有智能体的健康检查"""
-        for 智能体ID, 智能体 in self._智能体.items():
+        async def 检查单个(智能体ID, 智能体):
             try:
                 开始时间 = time.time()
                 健康 = await 智能体.健康检查()
@@ -142,6 +142,11 @@ class 健康检查器:
                 )
                 self._健康记录[智能体ID].append(记录)
                 logger.error(f"智能体 {智能体ID} 健康检查异常: {e}")
+
+        await asyncio.gather(*[
+            检查单个(智能体ID, 智能体)
+            for 智能体ID, 智能体 in self._智能体.items()
+        ])
 
     def 获取健康状态(self, 智能体ID: str) -> 智能体健康状态:
         """获取智能体当前健康状态"""

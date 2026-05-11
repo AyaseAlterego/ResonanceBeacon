@@ -1,0 +1,205 @@
+# 测试补充流水线模板
+# 用于分析现有测试覆盖并补充缺失测试
+
+name: "测试补充流水线"
+description: "从覆盖率分析到测试审查的完整测试补充流程"
+
+stages:
+  # 阶段1：覆盖率分析
+  - id: coverage_analysis
+    name: "覆盖率分析"
+    type: sequential
+    tasks:
+      - id: run_coverage
+        name: "运行覆盖率分析"
+        type: coverage_analysis
+        category: exploration
+        capabilities:
+          - coverage_analysis
+          - pytest_cov
+          - code_metrics
+        estimated_tokens: 2500
+
+      - id: identify_gaps
+        name: "识别覆盖缺口"
+        type: gap_analysis
+        category: deep
+        capabilities:
+          - gap_analysis
+          - coverage_visualization
+          - critical_path_analysis
+        estimated_tokens: 3000
+        depends_on:
+          - run_coverage
+
+      - id: prioritize_tests
+        name: "优先级排序"
+        type: prioritization
+        category: advisor
+        capabilities:
+          - risk_based_prioritization
+          - test_strategy
+          - impact_analysis
+        estimated_tokens: 1500
+        depends_on:
+          - identify_gaps
+
+  # 阶段2：单元测试
+  - id: unit_testing
+    name: "单元测试"
+    type: parallel
+    tasks:
+      - id: generate_core_unit_tests
+        name: "核心模块单元测试"
+        type: test_generation
+        category: deep
+        capabilities:
+          - test_generation
+          - pytest
+          - unit_testing
+          - mock_design
+        estimated_tokens: 6000
+        depends_on:
+          - prioritize_tests
+
+      - id: generate_utility_unit_tests
+        name: "工具类单元测试"
+        type: test_generation
+        category: quick
+        capabilities:
+          - test_generation
+          - pytest
+          - unit_testing
+          - edge_case_discovery
+        estimated_tokens: 3000
+        depends_on:
+          - prioritize_tests
+
+      - id: generate_error_unit_tests
+        name: "异常路径单元测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - pytest
+          - error_testing
+          - boundary_analysis
+        estimated_tokens: 4000
+        depends_on:
+          - prioritize_tests
+
+  # 阶段3：集成测试
+  - id: integration_testing
+    name: "集成测试"
+    type: sequential
+    tasks:
+      - id: generate_module_integration
+        name: "模块集成测试"
+        type: test_generation
+        category: deep
+        capabilities:
+          - test_generation
+          - integration_testing
+          - module_interaction
+        estimated_tokens: 5000
+        depends_on:
+          - generate_core_unit_tests
+          - generate_utility_unit_tests
+          - generate_error_unit_tests
+
+      - id: generate_api_integration
+        name: "API集成测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - api_testing
+          - contract_testing
+        estimated_tokens: 4000
+        depends_on:
+          - generate_module_integration
+
+      - id: generate_data_integration
+        name: "数据层集成测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - database_testing
+          - data_integrity
+        estimated_tokens: 3000
+        depends_on:
+          - generate_module_integration
+
+  # 阶段4：端到端测试
+  - id: e2e_testing
+    name: "端到端测试"
+    type: parallel
+    tasks:
+      - id: generate_user_flow_tests
+        name: "用户流程测试"
+        type: test_generation
+        category: deep
+        capabilities:
+          - test_generation
+          - e2e_testing
+          - user_flow_simulation
+        estimated_tokens: 5000
+        depends_on:
+          - generate_api_integration
+          - generate_data_integration
+
+      - id: generate_system_tests
+        name: "系统级测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - system_testing
+          - environment_testing
+        estimated_tokens: 4000
+        depends_on:
+          - generate_api_integration
+          - generate_data_integration
+
+  # 阶段5：测试审查
+  - id: test_review
+    name: "测试审查"
+    type: sequential
+    tasks:
+      - id: review_test_quality
+        name: "审查测试质量"
+        type: test_review
+        category: advisor
+        capabilities:
+          - test_review
+          - test_quality_metrics
+          - best_practices
+        estimated_tokens: 3000
+        depends_on:
+          - generate_user_flow_tests
+          - generate_system_tests
+
+      - id: verify_coverage_improvement
+        name: "验证覆盖率提升"
+        type: coverage_analysis
+        category: deep
+        capabilities:
+          - coverage_analysis
+          - metrics_comparison
+          - reporting
+        estimated_tokens: 2000
+        depends_on:
+          - review_test_quality
+
+      - id: finalize_test_suite
+        name: "定稿测试套件"
+        type: test_organization
+        category: utility
+        capabilities:
+          - test_organization
+          - test_cataloging
+          - ci_integration
+        estimated_tokens: 1500
+        depends_on:
+          - verify_coverage_improvement

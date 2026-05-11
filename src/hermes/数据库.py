@@ -1,26 +1,28 @@
 """数据库连接和会话管理"""
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 import os
 
-# 数据库URL（从环境变量读取）
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://hermes:hermes_dev_password@localhost:5432/hermes_db"
-)
+engine: AsyncEngine | None = None
 
-# 创建异步引擎
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,  # 生产环境关闭SQL日志
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
-)
+def 获取引擎() -> AsyncEngine:
+    global engine
+    if engine is None:
+        数据库URL = os.getenv("DATABASE_URL")
+        if not 数据库URL:
+            raise ValueError("环境变量 DATABASE_URL 未设置")
+        engine = create_async_engine(
+            数据库URL,
+            echo=False,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+        )
+    return engine
 
 # 创建会话工厂
 AsyncSessionLocal = async_sessionmaker(
-    engine,
+    获取引擎(),
     class_=AsyncSession,
     expire_on_commit=False
 )
@@ -38,10 +40,8 @@ async def 获取数据库会话() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
 
 # 初始化数据库
 async def 初始化数据库():
-    async with engine.begin() as conn:
+    async with 获取引擎().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

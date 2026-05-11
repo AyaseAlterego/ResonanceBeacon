@@ -1,5 +1,6 @@
 """模拟智能体 - 用于测试"""
 import asyncio
+import random
 from typing import AsyncIterator, Any
 import logging
 
@@ -26,12 +27,15 @@ class 模拟智能体(智能体适配器):
         智能体ID: str = "mock_agent",
         类别: 智能体类别 = 智能体类别.工具,
         延迟秒: float = 0.1,
-        失败率: float = 0.0
+        失败率: float = 0.0,
+        随机种子: int = 42
     ):
         self._智能体ID = 智能体ID
         self._类别 = 类别
         self._延迟秒 = 延迟秒
         self._失败率 = 失败率
+        self._随机种子 = 随机种子
+        self._随机 = random.Random(随机种子)
         self._初始化 = False
 
     @property
@@ -75,13 +79,12 @@ class 模拟智能体(智能体适配器):
         上下文: 上下文包
     ) -> 任务结果:
         """执行任务"""
-        import random
 
         # 模拟延迟
         await asyncio.sleep(self._延迟秒)
 
         # 模拟失败
-        if random.random() < self._失败率:
+        if self._随机.random() < self._失败率:
             return 任务结果(
                 任务ID=任务ID,
                 状态="failed",

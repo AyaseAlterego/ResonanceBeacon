@@ -1,6 +1,6 @@
 """决策数据模型"""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from sqlalchemy import Column, String, Text, DateTime, JSON, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.dialects.postgresql import UUID
@@ -42,7 +42,7 @@ class 决策(Base):
     上下文 = Column(JSON, nullable=True, default=dict)  # 决策上下文（制品、代码等）
     反馈 = Column(Text, nullable=True)  # 决策反馈
 
-    创建时间 = Column(DateTime, default=datetime.utcnow, nullable=False)
+    创建时间 = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     超时时间 = Column(DateTime, nullable=True)
 
     def __repr__(self) -> str:

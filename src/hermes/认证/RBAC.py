@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any
 import logging
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta
 
@@ -96,7 +97,7 @@ class 认证服务:
     def __init__(self):
         self._用户: dict[str, 用户] = {}
         self._API密钥: dict[str, API密钥] = {}
-        self._密钥原文: dict[str, str] = {}  # 密钥ID -> 原文（仅用于展示一次）
+        self._密钥哈希索引: dict[str, API密钥] = {}
 
     def 创建用户(
         self,
@@ -150,27 +151,26 @@ class 认证服务:
         )
 
         self._API密钥[密钥ID] = API密钥对象
-        self._密钥原文[密钥ID] = 密钥原文
+        self._密钥哈希索引[密钥哈希] = API密钥对象
 
         logger.info(f"创建API密钥: {密钥ID} (用户: {用户ID})")
         return API密钥对象, 密钥原文
 
     def 验证密钥(self, 密钥原文: str) -> 用户 | None:
-        """验证API密钥并返回用户"""
-        密钥哈希 = hashlib.sha256(密钥原文.encode()).hexdigest()
-
-        for 密钥 in self._API密钥.values():
-            if 密钥.密钥哈希 == 密钥哈希:
-                if not 密钥.是否激活:
-                    return None
-                if 密钥.过期时间 and 密钥.过期时间 < datetime.now():
-                    return None
-
-                用户 = self._用户.get(密钥.用户ID)
-                if 用户 and 用户.是否激活:
-                    用户.最后登录时间 = datetime.now()
-                    return 用户
-
+        输入哈希 = hashlib.sha256(密钥原文.encode()).hexdigest()
+        密钥 = self._密钥哈希索引.get(输入哈希)
+        if not 密钥:
+            return None
+        if not hmac.compare_digest(密钥.密钥哈希, 输入哈希):
+            return None
+        if not 密钥.是否激活:
+            return None
+        if 密钥.过期时间 and 密钥.过期时间 < datetime.now():
+            return None
+        用户 = self._用户.get(密钥.用户ID)
+        if 用户 and 用户.是否激活:
+            用户.最后登录时间 = datetime.now()
+            return 用户
         return None
 
     def 检查权限(self, 用户: 用户, 权限: 权限) -> bool:

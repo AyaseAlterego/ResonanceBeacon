@@ -1,0 +1,263 @@
+# 微服务开发流水线模板
+# 用于微服务架构的完整开发流程
+
+name: "微服务开发流水线"
+description: "从服务设计到文档交付的微服务完整开发流程"
+
+stages:
+  # 阶段1：服务设计
+  - id: service_design
+    name: "服务设计"
+    type: sequential
+    tasks:
+      - id: domain_analysis
+        name: "领域分析"
+        type: domain_analysis
+        category: exploration
+        capabilities:
+          - domain_driven_design
+          - bounded_context
+          - domain_modeling
+        estimated_tokens: 4000
+
+      - id: service_decomposition
+        name: "服务拆分设计"
+        type: architecture_design
+        category: ultrabrain
+        capabilities:
+          - architecture_design
+          - service_decomposition
+          - microservice_patterns
+        estimated_tokens: 5000
+        depends_on:
+          - domain_analysis
+
+      - id: data_design
+        name: "数据架构设计"
+        type: data_design
+        category: specialist
+        capabilities:
+          - data_modeling
+          - database_design
+          - data_consistency
+        estimated_tokens: 3000
+        depends_on:
+          - service_decomposition
+
+  # 阶段2：API设计
+  - id: api_design
+    name: "API设计"
+    type: sequential
+    tasks:
+      - id: design_api_contract
+        name: "设计API契约"
+        type: api_design
+        category: specialist
+        capabilities:
+          - api_design
+          - contract_first_design
+          - openapi_spec
+        estimated_tokens: 3000
+        depends_on:
+          - data_design
+
+      - id: design_events
+        name: "设计事件契约"
+        type: event_design
+        category: specialist
+        capabilities:
+          - event_driven_design
+          - message_schema
+          - event_sourcing
+        estimated_tokens: 2500
+        depends_on:
+          - design_api_contract
+
+      - id: generate_stubs
+        name: "生成服务桩代码"
+        type: code_generation
+        category: quick
+        capabilities:
+          - code_generation
+          - stub_generation
+          - mock_creation
+        estimated_tokens: 2000
+        depends_on:
+          - design_events
+
+  # 阶段3：并行开发
+  - id: development
+    name: "并行开发"
+    type: parallel
+    tasks:
+      - id: service_implementation
+        name: "服务核心实现"
+        type: code_generation
+        category: deep
+        capabilities:
+          - code_generation
+          - python
+          - service_implementation
+          - business_logic
+        estimated_tokens: 8000
+        depends_on:
+          - generate_stubs
+
+      - id: database_implementation
+        name: "数据库层实现"
+        type: code_generation
+        category: specialist
+        capabilities:
+          - code_generation
+          - sql
+          - database_migration
+          - orm_implementation
+        estimated_tokens: 4000
+        depends_on:
+          - generate_stubs
+
+      - id: interface_implementation
+        name: "接口层实现"
+        type: code_generation
+        category: visual_engineering
+        capabilities:
+          - code_generation
+          - api_implementation
+          - middleware
+          - error_handling
+        estimated_tokens: 4000
+        depends_on:
+          - generate_stubs
+
+  # 阶段4：集成测试
+  - id: integration_testing
+    name: "集成测试"
+    type: sequential
+    tasks:
+      - id: contract_testing
+        name: "契约测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - contract_testing
+          - consumer_driver
+        estimated_tokens: 3000
+        depends_on:
+          - service_implementation
+          - database_implementation
+          - interface_implementation
+
+      - id: service_integration
+        name: "服务集成测试"
+        type: test_generation
+        category: deep
+        capabilities:
+          - test_generation
+          - service_integration
+          - message_testing
+        estimated_tokens: 4000
+        depends_on:
+          - contract_testing
+
+      - id: chaos_testing
+        name: "容错与混沌测试"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - chaos_engineering
+          - resilience_testing
+          - fault_injection
+        estimated_tokens: 3000
+        depends_on:
+          - service_integration
+
+  # 阶段5：部署配置
+  - id: deployment_config
+    name: "部署配置"
+    type: parallel
+    tasks:
+      - id: container_config
+        name: "容器化配置"
+        type: deployment
+        category: utility
+        capabilities:
+          - docker
+          - container_optimization
+          - multi_stage_build
+        estimated_tokens: 2000
+        depends_on:
+          - chaos_testing
+
+      - id: orchestrator_config
+        name: "编排配置"
+        type: deployment
+        category: specialist
+        capabilities:
+          - kubernetes
+          - helm
+          - service_mesh
+        estimated_tokens: 3000
+        depends_on:
+          - chaos_testing
+
+      - id: observability_config
+        name: "可观测性配置"
+        type: monitoring
+        category: specialist
+        capabilities:
+          - distributed_tracing
+          - log_aggregation
+          - metrics_collection
+          - alerting
+        estimated_tokens: 2000
+        depends_on:
+          - chaos_testing
+
+  # 阶段6：文档
+  - id: documentation
+    name: "文档交付"
+    type: parallel
+    tasks:
+      - id: service_docs
+        name: "服务文档"
+        type: documentation
+        category: utility
+        capabilities:
+          - documentation
+          - api_documentation
+          - service_catalog
+        estimated_tokens: 3000
+        depends_on:
+          - container_config
+          - orchestrator_config
+          - observability_config
+
+      - id: runbook
+        name: "运维手册"
+        type: documentation
+        category: advisor
+        capabilities:
+          - documentation
+          - runbook_writing
+          - incident_response
+          - troubleshooting
+        estimated_tokens: 2500
+        depends_on:
+          - container_config
+          - orchestrator_config
+          - observability_config
+
+      - id: architecture_docs
+        name: "架构文档"
+        type: documentation
+        category: deep
+        capabilities:
+          - documentation
+          - architecture_documentation
+          - decision_records
+        estimated_tokens: 2500
+        depends_on:
+          - container_config
+          - orchestrator_config
+          - observability_config

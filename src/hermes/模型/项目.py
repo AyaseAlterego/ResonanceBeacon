@@ -1,6 +1,6 @@
 """项目数据模型"""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, Text, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from ..数据库 import Base
@@ -15,8 +15,8 @@ class 项目(Base):
     仓库URL = Column(String(500), nullable=True)
     配置 = Column(JSON, nullable=True, default=dict)
 
-    创建时间 = Column(DateTime, default=datetime.utcnow, nullable=False)
-    更新时间 = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    创建时间 = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    更新时间 = Column(DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     def __repr__(self) -> str:
         return f"<项目 {self.名称}>"

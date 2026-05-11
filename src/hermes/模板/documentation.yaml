@@ -1,0 +1,214 @@
+# 文档生成流水线模板
+# 用于自动分析代码并生成各类文档
+
+name: "文档生成流水线"
+description: "自动分析代码库，生成API文档、架构文档和用户指南"
+
+stages:
+  # 阶段1：代码分析
+  - id: code_analysis
+    name: "代码分析"
+    type: sequential
+    tasks:
+      - id: scan_codebase
+        name: "扫描代码库结构"
+        type: code_analysis
+        category: exploration
+        capabilities:
+          - code_analysis
+          - structure_discovery
+          - dependency_mapping
+        estimated_tokens: 3000
+
+      - id: extract_metadata
+        name: "提取代码元数据"
+        type: metadata_extraction
+        category: deep
+        capabilities:
+          - ast_analysis
+          - metadata_extraction
+          - type_inference
+        estimated_tokens: 4000
+        depends_on:
+          - scan_codebase
+
+      - id: analyze_patterns
+        name: "分析设计模式"
+        type: pattern_analysis
+        category: specialist
+        capabilities:
+          - pattern_recognition
+          - design_patterns
+          - architecture_analysis
+        estimated_tokens: 2500
+        depends_on:
+          - scan_codebase
+
+  # 阶段2：API文档
+  - id: api_docs
+    name: "API文档"
+    type: parallel
+    tasks:
+      - id: generate_endpoint_docs
+        name: "生成接口端点文档"
+        type: documentation
+        category: specialist
+        capabilities:
+          - documentation
+          - api_documentation
+          - openapi_spec
+        estimated_tokens: 4000
+        depends_on:
+          - extract_metadata
+
+      - id: generate_type_docs
+        name: "生成类型定义文档"
+        type: documentation
+        category: quick
+        capabilities:
+          - documentation
+          - type_documentation
+          - schema_generation
+        estimated_tokens: 3000
+        depends_on:
+          - extract_metadata
+
+      - id: generate_example_code
+        name: "生成示例代码"
+        type: code_generation
+        category: utility
+        capabilities:
+          - code_generation
+          - example_writing
+          - usage_patterns
+        estimated_tokens: 3000
+        depends_on:
+          - extract_metadata
+
+  # 阶段3：架构文档
+  - id: architecture_docs
+    name: "架构文档"
+    type: sequential
+    tasks:
+      - id: generate_system_overview
+        name: "生成系统概览"
+        type: documentation
+        category: ultrabrain
+        capabilities:
+          - documentation
+          - system_design
+          - architecture_documentation
+        estimated_tokens: 5000
+        depends_on:
+          - analyze_patterns
+          - generate_endpoint_docs
+          - generate_type_docs
+
+      - id: generate_module_docs
+        name: "生成模块文档"
+        type: documentation
+        category: deep
+        capabilities:
+          - documentation
+          - module_documentation
+          - dependency_visualization
+        estimated_tokens: 4000
+        depends_on:
+          - generate_system_overview
+
+      - id: generate_data_flow_docs
+        name: "生成数据流文档"
+        type: documentation
+        category: specialist
+        capabilities:
+          - documentation
+          - data_flow_analysis
+          - sequence_diagram
+        estimated_tokens: 3000
+        depends_on:
+          - generate_system_overview
+
+  # 阶段4：用户指南
+  - id: user_guide
+    name: "用户指南"
+    type: parallel
+    tasks:
+      - id: generate_quickstart
+        name: "生成快速入门"
+        type: documentation
+        category: quick
+        capabilities:
+          - documentation
+          - technical_writing
+          - tutorial_writing
+        estimated_tokens: 3000
+        depends_on:
+          - generate_module_docs
+
+      - id: generate_configuration_guide
+        name: "生成配置指南"
+        type: documentation
+        category: specialist
+        capabilities:
+          - documentation
+          - configuration_management
+          - technical_writing
+        estimated_tokens: 2500
+        depends_on:
+          - generate_module_docs
+
+      - id: generate_troubleshooting
+        name: "生成故障排除指南"
+        type: documentation
+        category: advisor
+        capabilities:
+          - documentation
+          - troubleshooting
+          - error_cataloging
+        estimated_tokens: 2500
+        depends_on:
+          - generate_module_docs
+
+  # 阶段5：文档审查
+  - id: doc_review
+    name: "文档审查"
+    type: sequential
+    tasks:
+      - id: review_accuracy
+        name: "审查文档准确性"
+        type: documentation_review
+        category: advisor
+        capabilities:
+          - documentation_review
+          - accuracy_verification
+          - consistency_check
+        estimated_tokens: 3000
+        depends_on:
+          - generate_quickstart
+          - generate_configuration_guide
+          - generate_troubleshooting
+          - generate_data_flow_docs
+
+      - id: review_completeness
+        name: "审查文档完整性"
+        type: documentation_review
+        category: deep
+        capabilities:
+          - documentation_review
+          - completeness_analysis
+          - gap_identification
+        estimated_tokens: 2000
+        depends_on:
+          - review_accuracy
+
+      - id: finalize_docs
+        name: "定稿文档"
+        type: documentation
+        category: utility
+        capabilities:
+          - documentation
+          - formatting
+          - cross_referencing
+        estimated_tokens: 2000
+        depends_on:
+          - review_completeness

@@ -1,9 +1,12 @@
 """流水线路由"""
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
 from typing import Any, Optional
-from uuid import UUID
+from uuid import uuid4
 import logging
+
+from src.hermes.认证.RBAC import 用户, 权限
+from src.hermes.接口.认证依赖 import 需要权限
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,14 +37,14 @@ class 流水线列表响应(BaseModel):
     总数: int
 
 @router.get("/", response_model=流水线列表响应)
-async def 获取流水线列表():
+async def 获取流水线列表(当前用户: 用户 = Depends(需要权限(权限.流水线_读取))):
     """获取所有流水线"""
     return 流水线列表响应(流水线列表=[], 总数=0)
 
 @router.post("/", response_model=流水线响应, status_code=201)
-async def 创建流水线(请求: 流水线创建请求):
+async def 创建流水线(请求: 流水线创建请求, 当前用户: 用户 = Depends(需要权限(权限.流水线_创建))):
     """创建新流水线"""
-    流水线ID = f"pipeline-{id(请求)}"
+    流水线ID = f"pipeline-{uuid4()}"
     logger.info(f"创建流水线: {请求.名称}")
     return 流水线响应(
         ID=流水线ID,
@@ -50,7 +53,7 @@ async def 创建流水线(请求: 流水线创建请求):
     )
 
 @router.get("/{流水线ID}", response_model=流水线响应)
-async def 获取流水线(流水线ID: str):
+async def 获取流水线(流水线ID: str, 当前用户: 用户 = Depends(需要权限(权限.流水线_读取))):
     """获取流水线详情"""
     return 流水线响应(
         ID=流水线ID,
@@ -62,7 +65,8 @@ async def 获取流水线(流水线ID: str):
 async def 运行流水线(
     流水线ID: str,
     请求: 流水线运行请求,
-    后台任务: BackgroundTasks
+    后台任务: BackgroundTasks,
+    当前用户: 用户 = Depends(需要权限(权限.流水线_运行))
 ):
     """运行流水线"""
     logger.info(f"运行流水线: {流水线ID}")
@@ -80,17 +84,17 @@ async def 运行流水线(
     }
 
 @router.post("/{流水线ID}/取消")
-async def 取消流水线(流水线ID: str):
+async def 取消流水线(流水线ID: str, 当前用户: 用户 = Depends(需要权限(权限.流水线_取消))):
     """取消流水线"""
     logger.info(f"取消流水线: {流水线ID}")
     return {"流水线ID": 流水线ID, "状态": "已取消"}
 
 @router.get("/{流水线ID}/阶段")
-async def 获取阶段列表(流水线ID: str):
+async def 获取阶段列表(流水线ID: str, 当前用户: 用户 = Depends(需要权限(权限.流水线_读取))):
     """获取流水线的所有阶段"""
     return {"流水线ID": 流水线ID, "阶段列表": []}
 
 @router.get("/{流水线ID}/制品")
-async def 获取制品列表(流水线ID: str):
+async def 获取制品列表(流水线ID: str, 当前用户: 用户 = Depends(需要权限(权限.流水线_读取))):
     """获取流水线的所有制品"""
     return {"流水线ID": 流水线ID, "制品列表": []}

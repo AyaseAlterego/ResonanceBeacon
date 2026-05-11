@@ -5,6 +5,21 @@ from typing import Optional
 app = typer.Typer(help="配置管理命令")
 
 
+def _脱敏URL(URL: str) -> str:
+    if not URL:
+        return URL
+    from urllib.parse import urlparse, urlunparse
+    try:
+        解析结果 = urlparse(URL)
+        if 解析结果.password:
+            脱敏密码 = '*' * len(解析结果.password)
+            脱敏URL = 解析结果._replace(netloc=f"{解析结果.username}:{脱敏密码}@{解析结果.hostname}" + (f":{解析结果.port}" if 解析结果.port else ""))
+            return urlunparse(脱敏URL)
+    except:
+        pass
+    return URL
+
+
 @app.command()
 def 显示():
     """显示当前合并后的配置"""
@@ -16,7 +31,7 @@ def 显示():
     typer.echo(f"  项目名称: {配置.项目名称}")
     typer.echo(f"  版本: {配置.版本}")
     typer.echo(f"  环境: {配置.环境}")
-    typer.echo(f"  数据库URL: {配置.数据库URL}")
+    typer.echo(f"  数据库URL: {_脱敏URL(配置.数据库URL)}")
     typer.echo(f"  RedisURL: {配置.RedisURL}")
     typer.echo()
 

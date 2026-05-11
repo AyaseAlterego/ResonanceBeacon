@@ -1,5 +1,5 @@
 """多层级配置加载器，支持closest-wins策略"""
-import json
+import json5
 import os
 from pathlib import Path
 from typing import Optional
@@ -138,36 +138,17 @@ class 配置加载器:
             return None
 
         try:
-            # 支持JSONC格式（带注释的JSON）
             内容 = 配置路径.read_text(encoding="utf-8")
 
-            # 简单移除单行注释（生产环境应该用json5或类似库）
-            处理后的内容 = []
-            for 行 in 内容.split('\n'):
-                # 移除行末注释，但保留字符串中的#
-                if '//' in 行:
-                    部分 = 行.split('//')[0]
-                    处理后的内容.append(部分)
-                elif '#' in 行 and not ('"' in 行 or "'" in 行):
-                    部分 = 行.split('#')[0]
-                    处理后的内容.append(部分)
-                else:
-                    处理后的内容.append(行)
+            配置字典 = json5.loads(内容)
 
-            最终内容 = '\n'.join(处理后的内容)
-
-            # 解析JSON
-            配置字典 = json.loads(最终内容)
-
-            # 检查原型污染
             危险键 = 检查原型污染(配置字典)
             if 危险键:
-                logger.warning(f"在配置文件 {配置路径} 中发现潜在的原型污染: {危险键}")
+                raise ValueError(f"在配置文件 {配置路径} 中发现潜在的原型污染: {危险键}")
 
-            # 创建配置对象
             return 应用配置(**配置字典)
 
-        except json.JSONDecodeError as e:
+        except json5.JSONDecodeError as e:
             logger.error(f"解析配置文件 {配置路径} 失败: {e}")
             return None
         except Exception as e:
@@ -199,7 +180,8 @@ class 配置加载器:
         # 格式：HERMES_智能体_<agent_id>_<field>=<value>
         for 环境变量, 值 in os.environ.items():
             if 环境变量.startswith("HERMES_智能体_"):
-                部分 = 环境变量[14:].split('_', 1)  # 去掉 "HERMES_智能体_" 前缀
+                前缀 = "HERMES_智能体_"
+                部分 = 环境变量[len(前缀):].split('_', 1)
                 if len(部分) == 2:
                     智能体ID, 字段名 = 部分
                     智能体ID = 智能体ID.lower()

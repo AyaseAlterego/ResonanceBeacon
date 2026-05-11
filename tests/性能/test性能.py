@@ -23,9 +23,9 @@ class Test DAG性能:
         for i in range(999):
             调度器.添加边(f"node_{i}", f"node_{i+1}")
 
-        开始时间 = time.time()
+        开始时间 = time.perf_counter()
         结果 = 调度器.拓扑排序()
-        执行时间 = time.time() - 开始时间
+        执行时间 = time.perf_counter() - 开始时间
 
         assert len(结果) == 1000
         assert 执行时间 < 1.0  # 应该在1秒内完成
@@ -38,9 +38,9 @@ class Test DAG性能:
         for i in range(1000):
             调度器.添加节点(f"node_{i}")
 
-        开始时间 = time.time()
+        开始时间 = time.perf_counter()
         分组 = 调度器.获取并发组()
-        执行时间 = time.time() - 开始时间
+        执行时间 = time.perf_counter() - 开始时间
 
         assert len(分组) == 1  # 所有节点都应该在同一组
         assert len(分组[0]) == 1000
@@ -56,7 +56,7 @@ class Test 并发管理器性能:
         """测试并发许可获取性能"""
         管理器 = 并发管理器(每智能体最大并发=100)
 
-        开始时间 = time.time()
+        开始时间 = time.perf_counter()
 
         # 并发获取100个许可
         任务列表 = []
@@ -64,7 +64,7 @@ class Test 并发管理器性能:
             任务列表.append(管理器.获取许可("agent_1"))
 
         结果 = await asyncio.gather(*任务列表)
-        执行时间 = time.time() - 开始时间
+        执行时间 = time.perf_counter() - 开始时间
 
         assert all(结果)
         assert 执行时间 < 0.1  # 应该在0.1秒内完成
@@ -79,18 +79,18 @@ class Test 健康检查器性能:
         检查器 = 健康检查器()
 
         # 记录大量任务
-        开始时间 = time.time()
+        开始时间 = time.perf_counter()
         for i in range(1000):
             检查器.记录任务开始(f"task_{i}", f"agent_{i % 10}")
             检查器.记录任务完成(f"task_{i}", f"agent_{i % 10}", True)
-        执行时间 = time.time() - 开始时间
+        执行时间 = time.perf_counter() - 开始时间
 
         assert 执行时间 < 1.0  # 应该在1秒内完成
 
         # 计算负载统计
-        开始时间 = time.time()
+        开始时间 = time.perf_counter()
         统计列表 = 检查器.获取所有负载统计()
-        计算时间 = time.time() - 开始时间
+        计算时间 = time.perf_counter() - 开始时间
 
         assert len(统计列表) == 10  # 10个不同的agent
         assert 计算时间 < 0.1  # 应该在0.1秒内完成

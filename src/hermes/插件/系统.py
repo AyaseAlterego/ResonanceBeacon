@@ -7,6 +7,7 @@ from pathlib import Path
 import importlib
 import logging
 import json
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +117,11 @@ class 插件管理器:
             return None
 
         try:
-            # 动态导入插件模块
+            解析后插件目录 = 插件目录.resolve()
+            解析后插件路径 = self.插件路径.resolve()
+            if not str(解析后插件目录).startswith(str(解析后插件路径)):
+                raise ValueError(f"插件目录 {解析后插件目录} 不在允许的插件路径 {解析后插件路径} 内")
+
             模块路径 = 插件目录 / "__init__.py"
             if not 模块路径.exists():
                 模块路径 = 插件目录 / f"{插件ID}.py"
@@ -125,7 +130,21 @@ class 插件管理器:
                 logger.error(f"插件入口文件不存在: {插件目录}")
                 return None
 
-            # 导入模块
+            解析后模块路径 = 模块路径.resolve()
+            if not str(解析后模块路径).startswith(str(解析后插件目录)):
+                raise ValueError(f"模块路径 {解析后模块路径} 不在插件目录 {解析后插件目录} 内")
+
+            签名文件 = 插件目录 / "签名.sha256"
+            if 签名文件.exists():
+                签名内容 = 签名文件.read_text(encoding="utf-8").strip()
+                入口内容 = 模块路径.read_bytes()
+                计算哈希 = hashlib.sha256(入口内容).hexdigest()
+                if 计算哈希 != 签名内容:
+                    raise ValueError(f"插件 {插件ID} 签名验证失败: 哈希不匹配")
+                logger.info(f"插件 {插件ID} 签名验证通过")
+            else:
+                logger.warning(f"插件 {插件ID} 缺少签名文件，以开发模式加载")
+
             规范名称 = f"插件.{插件ID}"
             规范路径 = str(插件目录)
             规格 = importlib.util.spec_from_file_location(
@@ -136,15 +155,13 @@ class 插件管理器:
 
             if 规格 and 规格.loader:
                 模块 = importlib.util.module_from_spec(规格)
-                importlib.util.spec = 规格
+                模块.__spec__ = 规格
                 规格.loader.exec_module(模块)
 
-                # 查找插件类
                 if hasattr(模块, "插件类"):
                     插件类 = 模块.插件类
                     插件实例 = 插件类()
 
-                    # 初始化插件
                     配置文件 = 插件目录 / "配置.json"
                     配置 = {}
                     if 配置文件.exists():
@@ -159,6 +176,8 @@ class 插件管理器:
                     logger.info(f"加载插件: {插件ID} v{插件实例.元数据.版本}")
                     return 插件实例
 
+        except ValueError as e:
+            logger.error(f"加载插件 {插件ID} 安全校验失败: {e}")
         except Exception as e:
             logger.error(f"加载插件 {插件ID} 失败: {e}", exc_info=True)
 

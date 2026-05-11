@@ -1,8 +1,8 @@
 """流水线数据模型"""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
-from sqlalchemy import Column, String, Text, Integer, Float, DateTime, JSON, ForeignKey, Enum as SQLEnum, Index
+from sqlalchemy import Column, String, Integer, Float, DateTime, JSON, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.dialects.postgresql import UUID
 from ..数据库 import Base
 
@@ -34,7 +34,7 @@ class 流水线(Base):
 
     开始时间 = Column(DateTime, nullable=True)
     完成时间 = Column(DateTime, nullable=True)
-    创建时间 = Column(DateTime, default=datetime.utcnow, nullable=False)
+    创建时间 = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 
     # 统计信息
     使用的令牌数 = Column(Integer, default=0)

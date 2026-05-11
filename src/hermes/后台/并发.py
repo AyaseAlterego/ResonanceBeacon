@@ -15,7 +15,12 @@ class 并发管理器:
     def __init__(self, 每智能体最大并发: int = 5):
         self.每智能体最大并发 = 每智能体最大并发
         self._当前并发: dict[str, int] = defaultdict(int)
-        self._锁 = asyncio.Lock()
+        self._锁: asyncio.Lock | None = None
+
+    def _获取锁(self) -> asyncio.Lock:
+        if self._锁 is None:
+            self._锁 = asyncio.Lock()
+        return self._锁
 
     async def 获取许可(self, 智能体ID: str) -> bool:
         """
@@ -24,7 +29,7 @@ class 并发管理器:
         Returns:
             True 如果获取成功，False 如果已达到最大并发数
         """
-        async with self._锁:
+        async with self._获取锁():
             if self._当前并发[智能体ID] < self.每智能体最大并发:
                 self._当前并发[智能体ID] += 1
                 logger.debug(
@@ -41,7 +46,7 @@ class 并发管理器:
 
     async def 释放许可(self, 智能体ID: str):
         """释放并发许可"""
-        async with self._锁:
+        async with self._获取锁():
             if self._当前并发[智能体ID] > 0:
                 self._当前并发[智能体ID] -= 1
                 logger.debug(

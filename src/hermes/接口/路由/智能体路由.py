@@ -1,8 +1,11 @@
 """智能体路由"""
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from typing import Any, Optional
 import logging
+
+from src.hermes.认证.RBAC import 用户, 权限
+from src.hermes.接口.认证依赖 import 需要权限
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -58,7 +58,7 @@ class DAG调度器:
         for 节点 in 节点列表:
             节点ID = 节点.get("id")
             if not 节点ID:
-                continue
+                raise ValueError(f"节点缺少 id 字段: {节点}")
 
             self.添加节点(节点ID, 节点)
 

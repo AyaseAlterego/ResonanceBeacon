@@ -63,6 +63,7 @@ class 人工界面服务:
         self.默认超时秒 = 默认超时秒
 
         self._审批请求: dict[str, 审批请求] = {}
+        self._审批事件: dict[str, asyncio.Event] = {}
         self._待处理审批: asyncio.Queue = asyncio.Queue()
         self._通知回调: list[Callable] = []
         self._超时检测任务: asyncio.Task | None = None
@@ -139,31 +140,23 @@ class 人工界面服务:
                 logger.error(f"通知回调失败: {e}")
 
         # 等待决策
+        事件 = asyncio.Event()
+        self._审批事件[请求ID] = 事件
+
         try:
-            结果 = await asyncio.wait_for(
-                self._等待决策(请求ID),
-                timeout=超时
-            )
-            return 结果
+            await asyncio.wait_for(事件.wait(), timeout=超时)
         except asyncio.TimeoutError:
             审批.状态 = 审批状态.已超时
             审批.决策时间 = datetime.now()
+            self._审批事件.pop(请求ID, None)
             logger.warning(f"审批 {请求ID} 超时")
             return False
 
-    async def _等待决策(self, 请求ID: str) -> bool:
-        """等待审批决策"""
-        while True:
-            审批 = self._审批请求.get(请求ID)
-            if not 审批:
-                return False
-
-            if 审批.状态 == 审批状态.已批准:
-                return True
-            elif 审批.状态 in (审批状态.已拒绝, 审批状态.已超时, 审批状态.已取消):
-                return False
-
-            await asyncio.sleep(0.5)
+        self._审批事件.pop(请求ID, None)
+        审批 = self._审批请求.get(请求ID)
+        if 审批 and 审批.状态 == 审批状态.已批准:
+            return True
+        return False
 
     async def 提交决策(
         self,
@@ -181,6 +174,9 @@ class 人工界面服务:
         审批.决策者 = 决策者
         审批.决策时间 = datetime.now()
         审批.反馈 = 反馈
+
+        if 请求ID in self._审批事件:
+            self._审批事件[请求ID].set()
 
         logger.info(f"审批 {请求ID} 已{'批准' if 批准 else '拒绝'} (决策者: {决策者})")
         return True

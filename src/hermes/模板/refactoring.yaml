@@ -1,0 +1,226 @@
+# 重构流水线模板
+# 用于代码重构的完整流程，确保重构安全性和质量
+
+name: "重构流水线"
+description: "从影响分析到代码审查的完整重构流程，确保重构安全可控"
+
+stages:
+  # 阶段1：影响分析
+  - id: impact_analysis
+    name: "影响分析"
+    type: sequential
+    tasks:
+      - id: analyze_codebase
+        name: "分析代码库结构"
+        type: code_analysis
+        category: exploration
+        capabilities:
+          - code_analysis
+          - dependency_mapping
+        estimated_tokens: 3000
+
+      - id: identify_impact
+        name: "识别重构影响范围"
+        type: impact_analysis
+        category: deep
+        capabilities:
+          - impact_analysis
+          - dependency_tracking
+          - call_graph_analysis
+        estimated_tokens: 4000
+        depends_on:
+          - analyze_codebase
+
+      - id: assess_risk
+        name: "评估重构风险"
+        type: risk_assessment
+        category: advisor
+        capabilities:
+          - risk_assessment
+          - code_metrics
+        estimated_tokens: 2000
+        depends_on:
+          - identify_impact
+
+  # 阶段2：重构计划
+  - id: refactor_planning
+    name: "重构计划"
+    type: sequential
+    tasks:
+      - id: create_refactor_plan
+        name: "制定重构计划"
+        type: architecture_design
+        category: ultrabrain
+        capabilities:
+          - architecture_design
+          - refactoring_patterns
+          - planning
+        estimated_tokens: 3000
+        depends_on:
+          - assess_risk
+
+      - id: define_test_baseline
+        name: "定义测试基线"
+        type: test_generation
+        category: specialist
+        capabilities:
+          - test_generation
+          - regression_testing
+          - coverage_analysis
+        estimated_tokens: 2000
+        depends_on:
+          - create_refactor_plan
+
+  # 阶段3：代码重构
+  - id: refactoring
+    name: "代码重构"
+    type: parallel
+    tasks:
+      - id: refactor_core
+        name: "核心模块重构"
+        type: code_generation
+        category: deep
+        capabilities:
+          - code_generation
+          - refactoring
+          - design_patterns
+        estimated_tokens: 8000
+        depends_on:
+          - define_test_baseline
+
+      - id: refactor_interfaces
+        name: "接口适配重构"
+        type: code_generation
+        category: specialist
+        capabilities:
+          - code_generation
+          - api_refactoring
+          - interface_adaptation
+        estimated_tokens: 5000
+        depends_on:
+          - define_test_baseline
+
+      - id: refactor_tests
+        name: "测试代码适配"
+        type: code_generation
+        category: quick
+        capabilities:
+          - code_generation
+          - test_adaptation
+          - test_refactoring
+        estimated_tokens: 3000
+        depends_on:
+          - define_test_baseline
+
+  # 阶段4：测试验证
+  - id: test_verification
+    name: "测试验证"
+    type: sequential
+    tasks:
+      - id: verify_unit_tests
+        name: "单元测试验证"
+        type: test_execution
+        category: utility
+        capabilities:
+          - test_execution
+          - pytest
+          - test_validation
+        estimated_tokens: 2000
+        depends_on:
+          - refactor_core
+          - refactor_interfaces
+          - refactor_tests
+
+      - id: verify_integration
+        name: "集成测试验证"
+        type: test_execution
+        category: utility
+        capabilities:
+          - test_execution
+          - integration_testing
+        estimated_tokens: 3000
+        depends_on:
+          - verify_unit_tests
+
+      - id: compare_coverage
+        name: "覆盖率对比"
+        type: coverage_analysis
+        category: specialist
+        capabilities:
+          - coverage_analysis
+          - metrics_comparison
+        estimated_tokens: 1500
+        depends_on:
+          - verify_integration
+
+  # 阶段5：回归测试
+  - id: regression
+    name: "回归测试"
+    type: parallel
+    tasks:
+      - id: functional_regression
+        name: "功能回归测试"
+        type: test_execution
+        category: utility
+        capabilities:
+          - test_execution
+          - regression_testing
+          - functional_testing
+        estimated_tokens: 3000
+        depends_on:
+          - compare_coverage
+
+      - id: performance_regression
+        name: "性能回归测试"
+        type: test_execution
+        category: specialist
+        capabilities:
+          - performance_testing
+          - benchmarking
+          - profiling
+        estimated_tokens: 3000
+        depends_on:
+          - compare_coverage
+
+      - id: compatibility_check
+        name: "兼容性检查"
+        type: compatibility_testing
+        category: exploration
+        capabilities:
+          - compatibility_testing
+          - api_compatibility
+          - backward_compatibility
+        estimated_tokens: 2000
+        depends_on:
+          - compare_coverage
+
+  # 阶段6：代码审查
+  - id: review
+    name: "代码审查"
+    type: sequential
+    tasks:
+      - id: review_changes
+        name: "审查重构变更"
+        type: code_review
+        category: advisor
+        capabilities:
+          - code_review
+          - refactoring_validation
+          - best_practices
+        estimated_tokens: 4000
+        depends_on:
+          - functional_regression
+          - performance_regression
+          - compatibility_check
+
+      - id: validate_improvements
+        name: "验证改进效果"
+        type: metrics_analysis
+        category: deep
+        capabilities:
+          - code_metrics
+          - quality_assessment
+          - complexity_analysis
+        estimated_tokens: 2000
+        depends_on:
+          - review_changes

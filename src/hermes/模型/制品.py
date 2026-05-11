@@ -1,6 +1,6 @@
 """制品数据模型"""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.dialects.postgresql import UUID
@@ -39,7 +39,7 @@ class 制品(Base):
     大小字节 = Column(Integer, default=0)
     MIME类型 = Column(String(100), nullable=True)
 
-    创建时间 = Column(DateTime, default=datetime.utcnow, nullable=False)
+    创建时间 = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
 
     def __repr__(self) -> str:
         return f"<制品 {self.名称} ({self.制品类型.value})>"

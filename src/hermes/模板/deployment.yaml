@@ -1,0 +1,239 @@
+# 部署流水线模板
+# 用于自动化部署流程，包含安全检查和回滚能力
+
+name: "部署流水线"
+description: "从预检查到部署验证的完整自动化部署流程"
+
+stages:
+  # 阶段1：预检查
+  - id: pre_check
+    name: "预检查"
+    type: parallel
+    tasks:
+      - id: check_dependencies
+        name: "检查依赖完整性"
+        type: dependency_check
+        category: exploration
+        capabilities:
+          - dependency_analysis
+          - version_compatibility
+          - license_checking
+        estimated_tokens: 2000
+
+      - id: check_config
+        name: "检查配置有效性"
+        type: configuration_check
+        category: specialist
+        capabilities:
+          - configuration_validation
+          - environment_verification
+          - secret_scanning
+        estimated_tokens: 1500
+
+      - id: check_readiness
+        name: "检查部署就绪状态"
+        type: readiness_check
+        category: advisor
+        capabilities:
+          - deployment_readiness
+          - rollback_planning
+          - change_management
+        estimated_tokens: 1500
+
+  # 阶段2：构建
+  - id: build
+    name: "构建"
+    type: sequential
+    tasks:
+      - id: compile_build
+        name: "编译构建"
+        type: build
+        category: utility
+        capabilities:
+          - build_system
+          - compilation
+          - asset_optimization
+        estimated_tokens: 3000
+        depends_on:
+          - check_dependencies
+          - check_config
+          - check_readiness
+
+      - id: package_artifacts
+        name: "打包制品"
+        type: packaging
+        category: utility
+        capabilities:
+          - packaging
+          - docker
+          - artifact_management
+        estimated_tokens: 2000
+        depends_on:
+          - compile_build
+
+      - id: generate_manifest
+        name: "生成部署清单"
+        type: manifest_generation
+        category: quick
+        capabilities:
+          - manifest_generation
+          - versioning
+          - changelog
+        estimated_tokens: 1500
+        depends_on:
+          - package_artifacts
+
+  # 阶段3：测试
+  - id: test
+    name: "测试"
+    type: sequential
+    tasks:
+      - id: smoke_tests
+        name: "冒烟测试"
+        type: test_execution
+        category: quick
+        capabilities:
+          - test_execution
+          - smoke_testing
+          - health_check
+        estimated_tokens: 2000
+        depends_on:
+          - generate_manifest
+
+      - id: integration_tests
+        name: "集成测试"
+        type: test_execution
+        category: utility
+        capabilities:
+          - test_execution
+          - integration_testing
+          - api_testing
+        estimated_tokens: 3000
+        depends_on:
+          - smoke_tests
+
+  # 阶段4：安全扫描
+  - id: security_scan
+    name: "安全扫描"
+    type: parallel
+    tasks:
+      - id: vulnerability_scan
+        name: "漏洞扫描"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - security_analysis
+          - vulnerability_scanning
+          - cve_checking
+        estimated_tokens: 3000
+        depends_on:
+          - integration_tests
+
+      - id: compliance_check
+        name: "合规性检查"
+        type: compliance_check
+        category: specialist
+        capabilities:
+          - compliance_checking
+          - security_policy
+          - audit_logging
+        estimated_tokens: 2000
+        depends_on:
+          - integration_tests
+
+      - id: secret_scan
+        name: "密钥泄露扫描"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - secret_detection
+          - credential_scanning
+          - data_protection
+        estimated_tokens: 1500
+        depends_on:
+          - integration_tests
+
+  # 阶段5：部署
+  - id: deploy
+    name: "部署"
+    type: sequential
+    tasks:
+      - id: prepare_rollback
+        name: "准备回滚方案"
+        type: rollback_preparation
+        category: advisor
+        capabilities:
+          - rollback_planning
+          - backup_creation
+          - snapshot_management
+        estimated_tokens: 2000
+        depends_on:
+          - vulnerability_scan
+          - compliance_check
+          - secret_scan
+
+      - id: deploy_staging
+        name: "部署到预发布环境"
+        type: deployment
+        category: utility
+        capabilities:
+          - deployment
+          - kubernetes
+          - blue_green_deployment
+        estimated_tokens: 3000
+        depends_on:
+          - prepare_rollback
+
+      - id: deploy_production
+        name: "部署到生产环境"
+        type: deployment
+        category: utility
+        capabilities:
+          - deployment
+          - kubernetes
+          - canary_release
+          - progressive_delivery
+        estimated_tokens: 3000
+        depends_on:
+          - deploy_staging
+
+  # 阶段6：验证
+  - id: verification
+    name: "部署验证"
+    type: parallel
+    tasks:
+      - id: health_verification
+        name: "健康检查验证"
+        type: health_check
+        category: quick
+        capabilities:
+          - health_checking
+          - endpoint_verification
+          - service_discovery
+        estimated_tokens: 1500
+        depends_on:
+          - deploy_production
+
+      - id: performance_verification
+        name: "性能指标验证"
+        type: performance_check
+        category: specialist
+        capabilities:
+          - performance_monitoring
+          - latency_checking
+          - resource_utilization
+        estimated_tokens: 2000
+        depends_on:
+          - deploy_production
+
+      - id: monitoring_setup
+        name: "监控告警配置"
+        type: monitoring
+        category: utility
+        capabilities:
+          - monitoring_setup
+          - alerting
+          - log_aggregation
+        estimated_tokens: 2000
+        depends_on:
+          - deploy_production

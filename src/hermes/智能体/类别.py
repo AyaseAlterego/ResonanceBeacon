@@ -3,6 +3,7 @@ from typing import Optional
 import logging
 
 from .基础 import 智能体适配器, 智能体类别, 任务需求
+from .健康检查 import 健康检查器
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,7 @@ class 类别路由器:
 
     def __init__(self):
         # 路由表：类别 -> 智能体ID列表（按优先级排序）
+        self._健康检查器: 健康检查器 | None = None
         self.路由表: dict[智能体类别, list[str]] = {
             智能体类别.超级大脑: ["claude_code"],
             智能体类别.深度: ["claude_code", "opencode"],
@@ -32,6 +34,10 @@ class 类别路由器:
     def 设置注册表(self, 注册表):
         """设置智能体注册表"""
         self._智能体注册表 = 注册表
+
+    def 设置健康检查器(self, 检查器: 健康检查器):
+        """设置健康检查器"""
+        self._健康检查器 = 检查器
 
     def 注册类别路由(self, 类别: 智能体类别, 智能体ID列表: list[str]):
         """注册新的类别路由"""
@@ -93,9 +99,8 @@ class 类别路由器:
 
     def _是否健康(self, 智能体: 智能体适配器) -> bool:
         """检查智能体是否健康"""
-        # 这里可以添加更复杂的健康检查逻辑
-        # 例如：检查最近的成功率、响应时间等
-        return True
+        健康状态 = self._健康检查器.获取健康状态(智能体.智能体ID) if self._健康检查器 else None
+        return 健康状态 != "unhealthy"
 
     def _评分智能体(self, 智能体: 智能体适配器, 需求: 任务需求) -> float:
         """
@@ -129,9 +134,11 @@ class 类别路由器:
             评分 -= 平均成本 / 10
 
         # 4. 负载均衡（优先选择负载低的）
-        # 这里需要从注册表获取负载信息
-        # 暂时假设负载为0
-        评分 -= 0 * 15
+        if self._健康检查器:
+            负载统计 = self._健康检查器.获取负载统计(智能体.智能体ID)
+            if 负载统计:
+                评分 -= 负载统计.当前并发数 * 15
+                评分 -= (1 - 负载统计.成功率) * 100 if 负载统计.累计任务数 > 0 else 0
 
         # 5. 任务优先级
         评分 += 需求.优先级 * 5

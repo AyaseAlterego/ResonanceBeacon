@@ -52,6 +52,7 @@ class 本地任务队列:
         self._运行中 = False
         self._信号量 = asyncio.Semaphore(最大并发)
         self._工作器任务列表: list[asyncio.Task] = []
+        self._最大保留任务数: int = 1000
 
     async def 提交任务(
         self,
@@ -84,6 +85,7 @@ class 本地任务队列:
 
         self._任务存储[任务ID] = 任务
         await self._任务队列.put(任务ID)
+        self._清理过期任务()
 
         logger.info(f"任务已提交: {任务.ID} ({任务.名称})")
         return 任务ID
@@ -177,8 +179,24 @@ class 本地任务队列:
                     任务.完成时间 = datetime.now()
                     logger.error(f"{工作器名称} 任务最终失败: {任务.名称} - {e}")
 
+    def _清理过期任务(self):
+        """清理过期任务，防止内存泄漏"""
+        if len(self._任务存储) <= self._最大保留任务数:
+            return
+        已完成的任务 = sorted(
+            [t for t in self._任务存储.values() if t.状态 in (
+                队列任务状态.已完成, 队列任务状态.失败, 队列任务状态.已取消
+            )],
+            key=lambda x: x.完成时间 or datetime.min
+        )
+        to_remove = len(self._任务存储) - self._最大保留任务数
+        if to_remove > 0:
+            for 任务 in 已完成的任务[:to_remove]:
+                del self._任务存储[任务.ID]
+
     def 获取任务状态(self, 任务ID: str) -> 队列任务状态 | None:
         """获取任务状态"""
+        self._清理过期任务()
         任务 = self._任务存储.get(任务ID)
         return 任务.状态 if 任务 else None
 

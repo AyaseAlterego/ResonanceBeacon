@@ -7,6 +7,19 @@ logger = logging.getLogger(__name__)
 # 危险的键列表
 DANGEROUS_KEYS = frozenset(["__proto__", "constructor", "prototype"])
 
+def _有序去重(列表):
+    已见 = set()
+    结果 = []
+    for 项 in 列表:
+        try:
+            可哈希 = 项 if isinstance(项, (str, int, float, bool, tuple, type(None))) else id(项)
+        except:
+            可哈希 = id(项)
+        if 可哈希 not in 已见:
+            已见.add(可哈希)
+            结果.append(项)
+    return 结果
+
 def 安全深度合并(
     基础: dict[str, Any],
     覆盖: dict[str, Any],
@@ -38,7 +51,7 @@ def 安全深度合并(
 
         # 集合并集策略处理列表（去重）
         elif 键 in 结果 and isinstance(结果[键], list) and isinstance(值, list):
-            结果[键] = list(set(结果[键] + 值))
+            结果[键] = _有序去重(结果[键] + 值)
 
         # 其他情况直接覆盖
         else:

@@ -1,0 +1,213 @@
+# 代码审查流水线模板
+# 用于全面的自动化代码审查
+
+name: "代码审查流水线"
+description: "从代码分析到审查报告的全面自动化代码审查流程"
+
+stages:
+  # 阶段1：代码分析
+  - id: code_analysis
+    name: "代码分析"
+    type: parallel
+    tasks:
+      - id: static_analysis
+        name: "静态代码分析"
+        type: code_analysis
+        category: exploration
+        capabilities:
+          - code_analysis
+          - static_analysis
+          - complexity_metrics
+        estimated_tokens: 3000
+
+      - id: dependency_analysis
+        name: "依赖关系分析"
+        type: dependency_analysis
+        category: deep
+        capabilities:
+          - dependency_analysis
+          - coupling_analysis
+          - dependency_visualization
+        estimated_tokens: 2500
+
+      - id: change_analysis
+        name: "变更范围分析"
+        type: change_analysis
+        category: exploration
+        capabilities:
+          - git_analysis
+          - diff_analysis
+          - change_impact
+        estimated_tokens: 2000
+
+  # 阶段2：风格检查
+  - id: style_check
+    name: "风格检查"
+    type: parallel
+    tasks:
+      - id: lint_check
+        name: "代码规范检查"
+        type: linting
+        category: quick
+        capabilities:
+          - linting
+          - code_style
+          - formatting_check
+        estimated_tokens: 1500
+        depends_on:
+          - static_analysis
+
+      - id: naming_check
+        name: "命名规范检查"
+        type: naming_analysis
+        category: quick
+        capabilities:
+          - naming_conventions
+          - consistency_check
+          - readability_assessment
+        estimated_tokens: 1000
+        depends_on:
+          - static_analysis
+
+      - id: documentation_check
+        name: "文档完整性检查"
+        type: documentation_review
+        category: utility
+        capabilities:
+          - documentation_review
+          - completeness_check
+          - docstring_validation
+        estimated_tokens: 1500
+        depends_on:
+          - static_analysis
+
+  # 阶段3：安全审计
+  - id: security_audit
+    name: "安全审计"
+    type: parallel
+    tasks:
+      - id: vulnerability_analysis
+        name: "漏洞分析"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - security_analysis
+          - vulnerability_detection
+          - owasp_checking
+        estimated_tokens: 3000
+        depends_on:
+          - dependency_analysis
+          - change_analysis
+
+      - id: input_validation_check
+        name: "输入验证检查"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - input_validation
+          - injection_detection
+          - sanitization_review
+        estimated_tokens: 2000
+        depends_on:
+          - dependency_analysis
+          - change_analysis
+
+      - id: auth_audit
+        name: "认证授权审计"
+        type: security_analysis
+        category: specialist
+        capabilities:
+          - authentication_audit
+          - authorization_review
+          - access_control
+        estimated_tokens: 2000
+        depends_on:
+          - dependency_analysis
+          - change_analysis
+
+  # 阶段4：性能分析
+  - id: performance_analysis
+    name: "性能分析"
+    type: sequential
+    tasks:
+      - id: complexity_analysis
+        name: "复杂度分析"
+        type: complexity_analysis
+        category: deep
+        capabilities:
+          - complexity_analysis
+          - cyclomatic_complexity
+          - cognitive_complexity
+        estimated_tokens: 2000
+        depends_on:
+          - lint_check
+          - naming_check
+          - documentation_check
+
+      - id: resource_analysis
+        name: "资源使用分析"
+        type: resource_analysis
+        category: specialist
+        capabilities:
+          - resource_analysis
+          - memory_profiling
+          - cpu_profiling
+        estimated_tokens: 2500
+        depends_on:
+          - complexity_analysis
+
+      - id: optimization_suggestions
+        name: "优化建议"
+        type: optimization
+        category: advisor
+        capabilities:
+          - optimization_analysis
+          - performance_tuning
+          - bottleneck_identification
+        estimated_tokens: 2000
+        depends_on:
+          - resource_analysis
+
+  # 阶段5：审查报告
+  - id: review_report
+    name: "审查报告"
+    type: sequential
+    tasks:
+      - id: aggregate_findings
+        name: "汇总审查发现"
+        type: report_generation
+        category: utility
+        capabilities:
+          - report_generation
+          - findings_aggregation
+          - severity_classification
+        estimated_tokens: 3000
+        depends_on:
+          - vulnerability_analysis
+          - input_validation_check
+          - auth_audit
+          - optimization_suggestions
+
+      - id: generate_review_report
+        name: "生成审查报告"
+        type: documentation
+        category: deep
+        capabilities:
+          - documentation
+          - report_writing
+          - actionable_recommendations
+        estimated_tokens: 3000
+        depends_on:
+          - aggregate_findings
+
+      - id: prioritize_fixes
+        name: "修复优先级排序"
+        type: prioritization
+        category: advisor
+        capabilities:
+          - risk_prioritization
+          - effort_estimation
+          - remediation_planning
+        estimated_tokens: 1500
+        depends_on:
+          - generate_review_report

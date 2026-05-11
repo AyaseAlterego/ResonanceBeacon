@@ -166,7 +166,7 @@ class 上下文管理器:
         # 展平列表
         结果 = []
         for 制品列表 in 所有制品:
-            结果.append(制品列表)
+            结果.extend(制品列表)
         return 结果
 
     def 压缩上下文(self, 内容: str, 目标令牌数: int) -> str:
@@ -196,5 +196,7 @@ class 上下文管理器:
         self._阶段上下文.clear()
 
     def _估算令牌数(self, 文本: str) -> int:
-        """估算文本的令牌数（简单估算：约4个字符为1个令牌）"""
-        return max(1, len(文本) // 4)
+        """估算文本的令牌数（针对中文优化）"""
+        中文字符数 = sum(1 for c in 文本 if '\u4e00' <= c <= '\u9fff')
+        ASCII字符数 = len(文本) - 中文字符数
+        return max(1, 中文字符数 // 1 + ASCII字符数 // 4)

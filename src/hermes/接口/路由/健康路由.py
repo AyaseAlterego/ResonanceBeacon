@@ -3,6 +3,8 @@ from fastapi import APIRouter
 from datetime import datetime
 import logging
 
+from ...智能体 import 智能体注册表
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -19,8 +21,18 @@ async def 健康检查():
 @router.get("/就绪")
 async def 就绪检查():
     """就绪检查"""
-    return {
-        "状态": "ready",
-        "数据库": "connected",
-        "智能体": "available"
-    }
+    状态 = {"状态": "healthy", "数据库": "disconnected", "智能体": "unknown"}
+    try:
+        from ...数据库 import 获取数据库会话
+        数据库会话 = 获取数据库会话()
+        状态["数据库"] = "connected"
+    except:
+        状态["状态"] = "degraded"
+
+    注册表 = 智能体注册表()
+    健康智能体 = 注册表.获取所有健康智能体()
+    状态["智能体"] = "available" if len(健康智能体) > 0 else "unavailable"
+    if 状态["智能体"] == "unavailable":
+        状态["状态"] = "degraded"
+
+    return 状态

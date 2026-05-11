@@ -100,11 +100,11 @@ class 应用配置(BaseModel):
 
     # 数据库配置
     数据库URL: str = Field(
-        default="postgresql+asyncpg://hermes:hermes_dev_password@localhost:5432/hermes_db",
+        default="",
         description="数据库连接URL"
     )
     RedisURL: str = Field(
-        default="redis://localhost:6379/0",
+        default="",
         description="Redis连接URL"
     )
 
