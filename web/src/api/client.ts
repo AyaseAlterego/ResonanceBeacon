@@ -20,7 +20,7 @@ import type {
   HermesChatResponse,
 } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8765';
 
 function getApiKey(): string | null {
   return localStorage.getItem('hermes_api_key');
