@@ -43,8 +43,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (res.status === 401) {
     localStorage.removeItem('hermes_api_key');
-    window.location.href = '/login';
-    throw new Error('未授权，请重新登录');
+    throw new Error('API 密钥无效或未设置');
   }
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
