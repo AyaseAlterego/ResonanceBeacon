@@ -3,11 +3,12 @@ import logging
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from src.hermes.认证.RBAC import 认证服务, 用户, 权限, 角色
+from ..认证.RBAC import 认证服务, 用户, 权限, 角色
 
 logger = logging.getLogger(__name__)
 
 认证服务实例 = 认证服务()
+默认密钥: str | None = None
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
