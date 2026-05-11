@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import TitleBar from './layout/TitleBar';
 import NavRail from './layout/NavRail';
 import Sidebar from './layout/Sidebar';
+import HermesChat from './layout/HermesChat';
 
 export default function Layout() {
   const [pythonConnected, setPythonConnected] = useState(true);
@@ -45,12 +46,7 @@ export default function Layout() {
         </main>
 
         <div className="w-[300px] border-l border-white/5 flex flex-col" style={{ backgroundColor: '#0d0d14' }}>
-          <div className="flex items-center gap-2 px-4 h-10 border-b border-white/5">
-            <span className="text-xs font-medium text-gray-400 tracking-wide">Hermes 对话</span>
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <span className="text-xs text-gray-600">对话面板</span>
-          </div>
+          <HermesChat />
         </div>
       </div>
     </div>
