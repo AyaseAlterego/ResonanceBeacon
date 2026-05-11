@@ -5,17 +5,15 @@ import Card from '../components/Card';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
-import { GitBranch, Bot, CheckSquare, Play, Rocket, Server, AlertCircle } from 'lucide-react';
+import { GitBranch, Bot, CheckSquare, Play, Rocket, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const BACKEND_URL = 'http://localhost:8765';
 
 export default function Dashboard() {
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
-    fetch(`${BACKEND_URL}/健康/健康`, { signal: AbortSignal.timeout(3000) })
-      .then(r => setBackendOnline(r.ok))
+    api.health.check()
+      .then(() => setBackendOnline(true))
       .catch(() => setBackendOnline(false));
   }, []);
 

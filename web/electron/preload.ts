@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   closeWindow: () => ipcRenderer.send('window:close'),
   getAppVersion: () => ipcRenderer.invoke('app:version'),
   onPythonStatusChange: (callback: (data: { status: string; error?: string }) => void) => {
-    ipcRenderer.on('python:status-changed', (_event, data) => callback(data as { status: string; error?: string }))
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data as { status: string; error?: string })
+    ipcRenderer.on('python:status-changed', handler)
+    return () => ipcRenderer.removeListener('python:status-changed', handler)
   }
 })

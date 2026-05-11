@@ -55,6 +55,12 @@ async function startPythonBackend(): Promise<void> {
   }
 }
 
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow()
+  }
+})
+
 app.whenReady().then(async () => {
   createWindow()
 
@@ -86,12 +92,6 @@ app.whenReady().then(async () => {
   })
 
   await startPythonBackend()
-
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
-    }
-  })
 })
 
 app.on('window-all-closed', async () => {

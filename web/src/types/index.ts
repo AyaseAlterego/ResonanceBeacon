@@ -94,3 +94,35 @@ export interface HermesChatRequest {
 export interface HermesChatResponse {
   reply: string;
 }
+
+export interface PipelineStagesResponse {
+  阶段列表: Array<{
+    ID: string;
+    名称: string;
+    阶段类型: string;
+    类别: string;
+    状态: string;
+    顺序: number;
+  }>;
+}
+
+export interface PipelineArtifactsResponse {
+  制品列表: Array<{
+    ID: string;
+    名称: string;
+    制品类型: string;
+    文件路径: string;
+    大小: number;
+  }>;
+}
+
+export interface ApprovalHistoryResponse {
+  审批历史: Array<{
+    ID: string;
+    流水线ID: string;
+    内容描述: string;
+    状态: string;
+    决策者: string;
+    决策时间: string;
+  }>;
+}

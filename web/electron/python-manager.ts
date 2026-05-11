@@ -20,6 +20,8 @@ export class PythonManager {
     const modulePath = projectPath.replace(/\\/g, '/')
 
     return new Promise((resolve, reject) => {
+      let resolved = false
+
       this.process = spawn(pythonPath, [
         '-m', 'uvicorn',
         'hermes.接口.应用:应用',
@@ -32,39 +34,39 @@ export class PythonManager {
         stdio: ['ignore', 'pipe', 'pipe']
       })
 
-      this.process.stdout?.on('data', (data: Buffer) => {
-        const text = data.toString()
-        if (text.includes('Uvicorn running on')) {
+      const onData = (data: Buffer) => {
+        if (!resolved && data.toString().includes('Uvicorn running on')) {
+          resolved = true
           this.running = true
           resolve()
         }
-      })
+      }
 
-      this.process.stderr?.on('data', (data: Buffer) => {
-        const text = data.toString()
-        if (text.includes('Uvicorn running on')) {
-          this.running = true
-          resolve()
-        }
-      })
+      this.process.stdout?.on('data', onData)
+      this.process.stderr?.on('data', onData)
 
       this.process.on('error', (err) => {
+        resolved = true
         this.running = false
         reject(new Error(`Failed to start Python: ${err.message}`))
       })
 
       this.process.on('exit', (code) => {
-        this.running = false
-        if (code !== 0 && code !== null) {
-          console.error(`Python process exited with code ${code}`)
+        if (!resolved) {
+          resolved = true
+          this.running = false
+          reject(new Error(`Python process exited with code ${code ?? 'unknown'} before starting`))
         }
       })
 
-      setTimeout(() => {
-        if (!this.running) {
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true
           reject(new Error('Python backend startup timeout (15s)'))
         }
       }, 15000)
+
+      this.process.on('close', () => clearTimeout(timeout))
     })
   }
 
