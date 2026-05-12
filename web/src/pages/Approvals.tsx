@@ -6,6 +6,7 @@ import Card from '../components/Card';
 import StatusBadge, { getVariant } from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorDisplay from '../components/ErrorDisplay';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export default function Approvals() {
@@ -46,7 +47,7 @@ export default function Approvals() {
   if (error) return <ErrorDisplay message={error.message} />;
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-100">审批管理</h2>
         <div className="flex gap-1 bg-dark-800/60 rounded-md p-0.5">
@@ -136,6 +137,6 @@ export default function Approvals() {
           })}
         </div>
       )}
-    </div>
+    </div></ErrorBoundary>
   );
 }

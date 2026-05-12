@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorDisplay from '../components/ErrorDisplay';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Play, XCircle, ArrowLeft, GitBranch, Layers, Package } from 'lucide-react';
 
 export default function PipelineDetail() {
@@ -42,7 +43,7 @@ export default function PipelineDetail() {
   const p = pipelineQ.data!;
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link to="/pipelines" className="text-dark-400 hover:text-dark-200">
           <ArrowLeft className="w-5 h-5" />
@@ -107,6 +108,6 @@ export default function PipelineDetail() {
           </span>
         </div>
       </Card>
-    </div>
+    </div></ErrorBoundary>
   );
 }

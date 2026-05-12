@@ -1,53 +1,30 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Component, ReactNode, ErrorInfo } from 'react'
 
-interface Props {
-  children: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-  error: Error | null;
-}
+interface Props { children: ReactNode; fallback?: ReactNode }
+interface State { hasError: boolean; error: Error | null }
 
 export default class ErrorBoundary extends Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('ErrorBoundary caught:', error, info);
-  }
-
-  handleRetry = () => {
-    this.setState({ hasError: false, error: null });
-  };
-
+  state: State = { hasError: false, error: null }
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error } }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('ErrorBoundary caught:', error, info) }
   render() {
     if (this.state.hasError) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-dark-950">
-          <div className="card max-w-md w-full text-center space-y-4">
-            <div className="text-4xl">⚠️</div>
-            <h2 className="text-lg font-semibold text-dark-100">页面出现错误</h2>
-            <p className="text-sm text-dark-400">
-              {this.state.error?.message || '未知错误'}
-            </p>
-            <button
-              onClick={this.handleRetry}
-              className="btn-primary"
-            >
-              重试
-            </button>
+      return this.props.fallback || (
+        <div className="flex flex-col items-center justify-center h-full text-white/40 text-sm gap-3 p-8">
+          <div className="w-12 h-12 rounded-full bg-red-900/20 flex items-center justify-center">
+            <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
           </div>
+          <p className="text-white/60 font-medium">应用出现错误</p>
+          <p className="text-xs text-white/20 max-w-md text-center">{this.state.error?.message}</p>
+          <button onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-1.5 bg-[#6c5ce7]/20 rounded text-xs text-[#a29bfe] hover:bg-[#6c5ce7]/30 transition-colors">
+            重试
+          </button>
         </div>
-      );
+      )
     }
-
-    return this.props.children;
+    return this.props.children
   }
 }

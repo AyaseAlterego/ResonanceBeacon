@@ -12,7 +12,7 @@ export default function Card({ title, children, className = '', action }: CardPr
     <div className={`card ${className}`}>
       {title && (
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-dark-200">{title}</h3>
+          <h3 className="text-sm font-semibold text-white/70">{title}</h3>
           {action}
         </div>
       )}

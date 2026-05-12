@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorDisplay from '../components/ErrorDisplay';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Bot, Heart, Gauge } from 'lucide-react';
 
 export default function Agents() {
@@ -15,7 +16,7 @@ export default function Agents() {
   const agents = data?.智能体列表 ?? [];
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-100">智能体列表</h2>
         <span className="text-xs text-dark-400">共 {data?.总数 ?? 0} 个</span>
@@ -32,7 +33,7 @@ export default function Agents() {
           ))}
         </div>
       )}
-    </div>
+    </div></ErrorBoundary>
   );
 }
 
@@ -62,6 +63,7 @@ function AgentCard({ agent }: { agent: { ID: string; 名称: string; 类别: str
     <div className="card-hover">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${['idle','running','online'].includes(agent.状态) ? 'bg-[#28c840] shadow-[0_0_6px_rgba(40,200,64,0.3)]' : 'bg-[#ff5f57]'}`} />
           <Bot className="w-4 h-4 text-accent-400" />
           <span className="text-sm font-medium text-dark-100">{agent.名称}</span>
         </div>

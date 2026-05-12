@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { GitBranch, Bot, CheckSquare, Play, Rocket, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -96,7 +97,7 @@ export default function Dashboard() {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-white/80">运行总览</h1>
         <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#6c5ce7]/20 transition-all flex items-center gap-2">
@@ -164,6 +165,6 @@ export default function Dashboard() {
           </div>
         </Card>
       )}
-    </div>
+    </div></ErrorBoundary>
   );
 }

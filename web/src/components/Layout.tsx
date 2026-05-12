@@ -41,7 +41,7 @@ export default function Layout() {
         <NavRail />
         <Sidebar />
 
-        <main className="flex-1 overflow-auto p-6">
+        <main className="flex-1 overflow-auto p-6 animate-fadeIn">
           <Outlet />
         </main>
 

@@ -6,6 +6,7 @@ import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorDisplay from '../components/ErrorDisplay';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { Link } from 'react-router-dom';
 import { Play, XCircle, GitBranch, ChevronRight, Plus } from 'lucide-react';
 
@@ -41,7 +42,7 @@ export default function Pipelines() {
   const pipelines = data?.流水线列表 ?? [];
 
   return (
-    <div className="space-y-6">
+    <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-dark-100">流水线列表</h2>
         <div className="flex items-center gap-3">
@@ -139,6 +140,6 @@ export default function Pipelines() {
           </Dialog.Panel>
         </div>
       </Dialog>
-    </div>
+    </div></ErrorBoundary>
   );
 }
