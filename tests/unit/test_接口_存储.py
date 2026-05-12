@@ -24,20 +24,14 @@ def test_获取所有流水线():
     assert len(s.获取所有流水线()) == 2
 
 
-def test_默认智能体():
+def test_空存储_无智能体():
     s = 内存存储()
-    智能体列表 = s.获取所有智能体()
-    ID列表 = [a.ID for a in 智能体列表]
-    assert "claude_code" in ID列表
-    assert "opencode" in ID列表
-    assert "codex" in ID列表
+    assert len(s.获取所有智能体()) == 0
 
 
-def test_查找智能体():
+def test_查找不存在的智能体():
     s = 内存存储()
-    a = s.查找智能体("claude_code")
-    assert a is not None
-    assert a.名称 == "Claude Code"
+    assert s.查找智能体("nonexistent") is None
 
 
 def test_审批待处理():

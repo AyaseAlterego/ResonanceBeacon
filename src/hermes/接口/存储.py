@@ -43,12 +43,6 @@ class 内存存储:
         self.流水线列表: dict[str, 流水线记录] = {}
         self.智能体列表: dict[str, 智能体记录] = {}
         self.审批列表: dict[str, 审批记录] = {}
-        self._初始化默认智能体()
-
-    def _初始化默认智能体(self):
-        self.智能体列表["claude_code"] = 智能体记录(ID="claude_code", 名称="Claude Code", 类别="ultrabrain", 状态="idle")
-        self.智能体列表["opencode"] = 智能体记录(ID="opencode", 名称="OpenCode", 类别="deep", 状态="idle")
-        self.智能体列表["codex"] = 智能体记录(ID="codex", 名称="Codex", 类别="specialist", 状态="idle")
 
     def 创建流水线(self, 名称: str, 描述: str = "") -> 流水线记录:
         r = 流水线记录(
