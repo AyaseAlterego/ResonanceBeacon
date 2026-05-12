@@ -2,17 +2,53 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import shutil
 import logging
 
 from .路由 import 流水线路由, 智能体路由, 审批路由, 配置路由, 健康路由, 插件市场路由, websocket路由, hermes路由
 from .websocket import 管理器
+from .存储 import 存储实例, 智能体记录
 
 logger = logging.getLogger(__name__)
+
+
+def 扫描本地智能体():
+    """扫描本地可用的 AI 工具，注册为智能体"""
+    # Claude Code
+    claude路径 = shutil.which("claude")
+    if claude路径:
+        存储实例.智能体列表["claude_code"] = 智能体记录(
+            ID="claude_code", 名称="Claude Code", 类别="ultrabrain",
+            状态="idle", 是否在线=True
+        )
+        logger.info(f"检测到 Claude Code: {claude路径}")
+    else:
+        存储实例.智能体列表.pop("claude_code", None)
+
+    # OpenCode
+    opencode路径 = shutil.which("opencode")
+    if opencode路径:
+        存储实例.智能体列表["opencode"] = 智能体记录(
+            ID="opencode", 名称="OpenCode", 类别="deep",
+            状态="idle", 是否在线=True
+        )
+        logger.info(f"检测到 OpenCode: {opencode路径}")
+    else:
+        存储实例.智能体列表.pop("opencode", None)
+
+    # Hermes 元智能体（始终存在）
+    存储实例.智能体列表["hermes"] = 智能体记录(
+        ID="hermes", 名称="Hermes Agent", 类别="ultrabrain",
+        状态="idle", 是否在线=True
+    )
+
 
 @asynccontextmanager
 async def 生命周期(app: FastAPI):
     """应用生命周期管理"""
     logger.info("起源信标服务启动中...")
+    扫描本地智能体()
+    logger.info(f"智能体扫描完成: {list(存储实例.智能体列表.keys())}")
     await 管理器.启动心跳检测()
     yield
     await 管理器.停止心跳检测()
