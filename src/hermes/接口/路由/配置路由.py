@@ -54,10 +54,10 @@ async def 获取合并后配置():
         来源="合并后"
     )
 
-@router.put("/{键路径}")
-async def 更新配置(键路径: str, 值: Any):
+@router.put("/{key_path}")
+async def 更新配置(key_path: str, 值: Any):
     """更新配置"""
-    路径部分 = 键路径.replace("/", ".").split(".")
+    路径部分 = key_path.replace("/", ".").split(".")
 
     for 部分 in 路径部分:
         if 部分 in DANGEROUS_KEYS:
@@ -104,4 +104,4 @@ async def 更新配置(键路径: str, 值: Any):
 
     配置加载器实例.清除缓存()
 
-    return {"键路径": 键路径, "状态": "已更新"}
+    return {"键路径": key_path, "状态": "已更新"}

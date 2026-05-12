@@ -48,26 +48,26 @@ async def 获取智能体列表():
     ]
     return 智能体列表响应(智能体列表=智能体列表, 总数=len(智能体列表))
 
-@router.get("/{智能体ID}", response_model=智能体响应)
-async def 获取智能体详情(智能体ID: str):
+@router.get("/{agent_id}", response_model=智能体响应)
+async def 获取智能体详情(agent_id: str):
     """获取智能体详情"""
     return 智能体响应(
-        ID=智能体ID,
-        名称=智能体ID,
+        ID=agent_id,
+        名称=agent_id,
         类别="unknown",
         状态="healthy"
     )
 
-@router.get("/{智能体ID}/健康检查")
-async def 智能体健康检查(智能体ID: str):
+@router.get("/{agent_id}/健康检查")
+async def 智能体健康检查(agent_id: str):
     """检查智能体健康状态"""
-    return {"智能体ID": 智能体ID, "健康": True, "消息": "智能体运行正常"}
+    return {"智能体ID": agent_id, "健康": True, "消息": "智能体运行正常"}
 
-@router.get("/{智能体ID}/负载")
-async def 获取智能体负载(智能体ID: str):
+@router.get("/{agent_id}/负载")
+async def 获取智能体负载(agent_id: str):
     """获取智能体负载信息"""
     return {
-        "智能体ID": 智能体ID,
+        "智能体ID": agent_id,
         "当前并发": 0,
         "最大并发": 5,
         "负载率": 0.0

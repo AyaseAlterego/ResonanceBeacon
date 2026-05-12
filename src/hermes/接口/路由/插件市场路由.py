@@ -101,26 +101,26 @@ async def 获取已安装插件():
     结果 = await _插件市场实例.获取已安装插件()
     return {"插件列表": [_已安装插件转响应(信息) for 信息 in 结果], "总数": len(结果)}
 
-@router.post("/安装/{插件ID}", response_model=操作结果响应)
-async def 安装插件(插件ID: str):
-    结果 = await _插件市场实例.安装插件(插件ID)
+@router.post("/安装/{plugin_id}", response_model=操作结果响应)
+async def 安装插件(plugin_id: str):
+    结果 = await _插件市场实例.安装插件(plugin_id)
     return 操作结果响应(成功=结果["成功"], 消息=结果["消息"])
 
-@router.post("/卸载/{插件ID}", response_model=操作结果响应)
-async def 卸载插件(插件ID: str):
-    结果 = await _插件市场实例.卸载插件(插件ID)
+@router.post("/卸载/{plugin_id}", response_model=操作结果响应)
+async def 卸载插件(plugin_id: str):
+    结果 = await _插件市场实例.卸载插件(plugin_id)
     return 操作结果响应(成功=结果["成功"], 消息=结果["消息"])
 
-@router.post("/更新/{插件ID}", response_model=操作结果响应)
-async def 更新插件(插件ID: str):
-    结果 = await _插件市场实例.更新插件(插件ID)
+@router.post("/更新/{plugin_id}", response_model=操作结果响应)
+async def 更新插件(plugin_id: str):
+    结果 = await _插件市场实例.更新插件(plugin_id)
     return 操作结果响应(成功=结果["成功"], 消息=结果["消息"])
 
-@router.get("/详情/{插件ID}", response_model=插件详情响应)
-async def 获取插件详情(插件ID: str):
-    详情 = await _插件市场实例.获取插件详情(插件ID)
+@router.get("/详情/{plugin_id}", response_model=插件详情响应)
+async def 获取插件详情(plugin_id: str):
+    详情 = await _插件市场实例.获取插件详情(plugin_id)
     if not 详情:
-        raise HTTPException(status_code=404, detail=f"插件未找到: {插件ID}")
+        raise HTTPException(status_code=404, detail=f"插件未找到: {plugin_id}")
     类型值 = 详情.类型.value if isinstance(详情.类型, 插件类型) else 详情.类型
     return 插件详情响应(
         ID=详情.ID,

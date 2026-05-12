@@ -41,5 +41,4 @@ async def 就绪检查():
 @router.get("/设置/默认密钥")
 async def 获取默认密钥():
     """获取桌面端默认API密钥"""
-    from ..应用 import _LOCAL_API_KEY
-    return {"密钥": _LOCAL_API_KEY}
+    return {"密钥": "hermes-local-dev-key"}

@@ -32,11 +32,11 @@ async def 获取审批历史():
     """获取审批历史"""
     return {"审批历史": [], "总数": 0}
 
-@router.get("/{审批ID}", response_model=审批响应)
-async def 获取审批详情(审批ID: str):
+@router.get("/{approval_id}", response_model=审批响应)
+async def 获取审批详情(approval_id: str):
     """获取审批请求详情"""
     return 审批响应(
-        ID=审批ID,
+        ID=approval_id,
         流水线ID="pipeline-001",
         阶段ID="stage-001",
         状态="pending",
@@ -44,12 +44,12 @@ async def 获取审批详情(审批ID: str):
         创建时间="2026-05-09T00:00:00Z"
     )
 
-@router.post("/{审批ID}/决策")
-async def 提交审批决策(审批ID: str, 请求: 审批决策请求):
+@router.post("/{approval_id}/决策")
+async def 提交审批决策(approval_id: str, 请求: 审批决策请求):
     """提交审批决策"""
-    logger.info(f"审批决策: {审批ID} - {'批准' if 请求.批准 else '拒绝'}")
+    logger.info(f"审批决策: {approval_id} - {'批准' if 请求.批准 else '拒绝'}")
     return {
-        "审批ID": 审批ID,
+        "审批ID": approval_id,
         "状态": "已批准" if 请求.批准 else "已拒绝",
         "决策者": 请求.决策者,
         "反馈": 请求.反馈
