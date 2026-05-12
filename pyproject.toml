@@ -143,4 +143,4 @@ exclude_lines = [
 ]
 
 [project.scripts]
-hermes = "hermes.命令行:app"
+rb = "hermes.命令行:app"
