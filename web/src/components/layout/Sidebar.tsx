@@ -1,102 +1,76 @@
-const mockPipelines = [
-  { name: '数据采集流水线', status: 'running', progress: 72 },
-  { name: '模型训练流程', status: 'running', progress: 45 },
-  { name: '内容审核管线', status: 'idle', progress: 100 },
-  { name: '日志分析任务', status: 'running', progress: 88 },
-  { name: '数据同步作业', status: 'failed', progress: 34 },
-];
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../../api/client'
 
-const mockAgents = [
-  { name: 'Hermes', role: '协调智能体', status: 'online' },
-  { name: 'Athena', role: '分析智能体', status: 'online' },
-  { name: 'Prometheus', role: '执行智能体', status: 'offline' },
-];
-
-const statusTagClass = (status: string) => {
+const tagClass = (status: string) => {
   switch (status) {
-    case 'running':
-    case 'online':
-      return 'bg-green-900/40 text-green-400 border border-green-800/30';
-    case 'idle':
-      return 'bg-yellow-900/40 text-yellow-400 border border-yellow-800/30';
-    case 'failed':
-    case 'offline':
-      return 'bg-red-900/40 text-red-400 border border-red-800/30';
-    default:
-      return 'bg-dark-700/40 text-dark-300 border border-dark-600/30';
+    case 'running': return 'bg-[#54a0ff]/10 text-[#54a0ff]'
+    case 'completed': return 'bg-[#28c840]/10 text-[#28c840]'
+    case 'failed': return 'bg-[#ff5f57]/10 text-[#ff5f57]'
+    case 'cancelled': return 'bg-white/5 text-white/30'
+    default: return 'bg-[#f59e0b]/10 text-[#f59e0b]'
   }
-};
+}
 
 const statusLabel = (status: string) => {
   switch (status) {
-    case 'running': return '运行中';
-    case 'idle': return '空闲';
-    case 'failed': return '失败';
-    case 'online': return '在线';
-    case 'offline': return '离线';
-    default: return status;
+    case 'running': return '运行中'
+    case 'completed': return '已完成'
+    case 'failed': return '失败'
+    case 'cancelled': return '已取消'
+    default: return '待开始'
   }
-};
+}
 
 export default function Sidebar() {
-  const runningCount = mockPipelines.filter(p => p.status === 'running').length;
-  const onlineCount = mockAgents.filter(a => a.status === 'online').length;
+  const pipelinesQ = useQuery({ queryKey: ['pipelines'], queryFn: api.pipeline.list, refetchInterval: 10000 })
+  const agentsQ = useQuery({ queryKey: ['agents'], queryFn: api.agent.list, refetchInterval: 10000 })
+
+  const pipelines = pipelinesQ.data?.流水线列表 ?? []
+  const agents = agentsQ.data?.智能体列表 ?? []
+  const runningCount = pipelines.filter(p => p.状态 === 'running').length
 
   return (
-    <div className="w-[200px] flex flex-col overflow-y-auto border-r border-white/5" style={{ backgroundColor: '#0d0d14' }}>
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium text-gray-400 tracking-wide">活动流水线</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-900/40 text-purple-400 border border-purple-800/30">
-            {runningCount}
-          </span>
-        </div>
-        <div className="space-y-2">
-          {mockPipelines.map((p) => (
-            <div key={p.name} className="group cursor-pointer">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-xs text-gray-300 truncate max-w-[110px]">{p.name}</span>
-                <span className={`text-[9px] px-1 py-0.5 rounded ${statusTagClass(p.status)}`}>
-                  {statusLabel(p.status)}
-                </span>
-              </div>
-              <div className="w-full h-1 rounded-full bg-white/5">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${p.progress}%`,
-                    backgroundColor: p.status === 'failed' ? '#ef4444' : '#a29bfe',
-                  }}
-                />
-              </div>
+    <div className="w-[200px] bg-black/10 border-r border-[#6c5ce7]/[0.06] flex flex-col shrink-0">
+      <div className="px-[14px] pt-[14px] pb-[8px] flex items-center justify-between">
+        <span className="text-[10px] font-semibold text-white/20 tracking-[1px]">流水线</span>
+        <span className="text-[10px] text-white/10 bg-white/[0.03] px-[5px] rounded-[3px]">
+          {runningCount > 0 ? `${runningCount} 运行中` : pipelines.length}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2">
+        {pipelines.length === 0 ? (
+          <p className="text-[10px] text-white/10 text-center pt-6">暂无流水线</p>
+        ) : (
+          pipelines.slice(0, 8).map(p => (
+            <div key={p.ID} className="px-[10px] py-[6px] rounded-[6px] mb-[2px] border border-transparent">
+              <div className="text-[12px] text-white/65 font-medium mb-[1px] truncate">{p.名称}</div>
+              <span className={`text-[9px] px-[5px] rounded-[3px] ${tagClass(p.状态)}`}>{statusLabel(p.状态)}</span>
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
 
-      <div className="border-t border-white/5 mx-3" />
-
-      <div className="p-3">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium text-gray-400 tracking-wide">智能体状态</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-900/40 text-green-400 border border-green-800/30">
-            {onlineCount}
-          </span>
+      <div className="border-t border-[#6c5ce7]/[0.06] px-[14px] py-[8px] shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[9px] font-semibold text-white/20 tracking-[1px]">智能体</span>
+          <span className="text-[9px] text-[#6c5ce7]/40">{agents.length} 个</span>
         </div>
-        <div className="space-y-2">
-          {mockAgents.map((a) => (
-            <div key={a.name} className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-xs text-gray-300">{a.name}</span>
-                <span className="text-[10px] text-gray-500">{a.role}</span>
+        {agents.length === 0 ? (
+          <p className="text-[9px] text-white/10 text-center">暂无智能体</p>
+        ) : (
+          agents.slice(0, 5).map(a => (
+            <div key={a.ID} className="flex items-center px-[6px] py-[3px] rounded-[4px] mb-[2px]">
+              <div className={`w-[6px] h-[6px] rounded-full mr-[8px] shrink-0 ${
+                a.状态 !== 'offline' ? 'bg-[#28c840] shadow-[0_0_6px_rgba(40,200,64,0.3)]' : 'bg-white/[0.1]'
+              }`} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] text-white/55 font-medium truncate">{a.名称}</div>
               </div>
-              <span className={`text-[9px] px-1 py-0.5 rounded ${statusTagClass(a.status)}`}>
-                {statusLabel(a.status)}
-              </span>
+              <span className={`text-[8px] px-[3px] rounded-[2px] ${tagClass(a.状态)}`}>{statusLabel(a.状态)}</span>
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
     </div>
-  );
+  )
 }

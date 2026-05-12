@@ -5,15 +5,26 @@ import NavRail from './layout/NavRail';
 import Sidebar from './layout/Sidebar';
 import HermesChat from './layout/HermesChat';
 
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8765';
+
 export default function Layout() {
-  const [pythonConnected, setPythonConnected] = useState(true);
+  const [pythonConnected, setPythonConnected] = useState(false);
 
   useEffect(() => {
+    fetch(`${API_BASE}/健康/健康`, { signal: AbortSignal.timeout(3000) })
+      .then(r => setPythonConnected(r.ok))
+      .catch(() => setPythonConnected(false));
+    const interval = setInterval(() => {
+      fetch(`${API_BASE}/健康/健康`, { signal: AbortSignal.timeout(3000) })
+        .then(r => setPythonConnected(r.ok))
+        .catch(() => setPythonConnected(false));
+    }, 10000);
     if (window.electronAPI?.onPythonStatusChange) {
       window.electronAPI.onPythonStatusChange((data) => {
         setPythonConnected(data.status === 'connected');
       });
     }
+    return () => clearInterval(interval);
   }, []);
 
   const handleMinimize = () => {
