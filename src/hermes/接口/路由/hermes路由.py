@@ -39,39 +39,87 @@ def _构建系统上下文() -> str:
     return context
 
 
+def _读取Hermes配置() -> dict | None:
+    import os, yaml
+    配置路径 = os.path.join(os.path.expanduser("~"), ".hermes", "config.yaml")
+    if not os.path.exists(配置路径):
+        return None
+    with open(配置路径, "r", encoding="utf-8") as f:
+        cfg = yaml.safe_load(f)
+    if not cfg:
+        return None
+    providers = cfg.get("custom_providers", [])
+    for p in providers:
+        if p.get("name") == "opencode":
+            return {"base_url": p["base_url"], "api_key": p["api_key"], "model": p["model"]}
+    return None
+
+
+def _调用AI(用户消息: str) -> str | None:
+    prompt_text = _构建系统上下文() + f"\n用户问题: {用户消息}"
+    import os, json, subprocess, shutil, httpx
+
+    # 1. Hermes 配置的 AI API（优先）
+    hcfg = _读取Hermes配置()
+    if hcfg:
+        try:
+            resp = httpx.post(
+                f"{hcfg['base_url']}/chat/completions",
+                headers={"Authorization": f"Bearer {hcfg['api_key']}",
+                         "Content-Type": "application/json"},
+                json={"model": hcfg["model"], "messages": [
+                    {"role": "system", "content": "你是 Hermes，起源信标系统的元智能体。回答简洁有用。"},
+                    {"role": "user", "content": prompt_text}],
+                    "max_tokens": 1000},
+                timeout=120
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("choices"):
+                    return data["choices"][0]["message"]["content"].strip()[:1200]
+        except Exception as e:
+            logger.warning(f"Hermes AI 失败: {e}")
+
+    # 2. Anthropic API
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if api_key:
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=api_key)
+            msg = client.messages.create(model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"), max_tokens=1024,
+                messages=[{"role": "user", "content": prompt_text}])
+            if msg.content and msg.content[0].text:
+                return msg.content[0].text.strip()[:1000]
+        except Exception as e:
+            logger.warning(f"Anthropic 失败: {e}")
+
+    # 3. Claude CLI
+    cc = shutil.which("claude")
+    if cc:
+        try:
+            r = subprocess.run([cc, "-p", prompt_text], capture_output=True, text=True, timeout=120)
+            if r.returncode == 0 and r.stdout.strip():
+                return r.stdout.strip()[:1000]
+        except Exception as e:
+            logger.warning(f"Claude 失败: {e}")
+
+    return None
+
+
 @router.post("/chat", response_model=对话响应)
 async def hermes_对话(请求: 对话请求):
     try:
-        claude = 存储实例.查找智能体("claude_code")
-        if claude and claude.是否在线:
-            try:
-                import subprocess, json
-                prompt = _构建系统上下文() + f"\n用户问题: {请求.message}"
-                result = subprocess.run(
-                    ["claude", "-p", prompt],
-                    capture_output=True, text=True, timeout=120,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return 对话响应(reply=result.stdout.strip()[:1000])
-            except Exception as e:
-                logger.warning(f"Claude Code 调用失败，回退到本地回复: {e}")
-
-        # 本地回退
-        if not 存储实例.获取所有流水线() and not 存储实例.获取所有智能体():
-            return 对话响应(reply="我是 Hermes。目前系统还没有数据，创建流水线后我可以为你提供进度信息。")
-
-        reply = f"收到消息：「{请求.message}」。\n"
-        流水线列表 = 存储实例.获取所有流水线()
-        if 流水线列表:
-            运行中 = sum(1 for p in 流水线列表 if p.状态 == "running")
-            已完成 = sum(1 for p in 流水线列表 if p.状态 == "completed")
-            reply += f"\n· 流水线: {len(流水线列表)} 条 (运行中 {运行中} / 已完成 {已完成})"
-        if 存储实例.获取所有智能体():
-            reply += f"\n· 智能体: {len(存储实例.获取所有智能体())} 个"
-        if 存储实例.获取待审批():
-            reply += f"\n· 待审批: {len(存储实例.获取待审批())} 项"
-        reply += "\n\n我可以回答项目进度相关的问题。"
-        return 对话响应(reply=reply)
+        reply = _调用AI(请求.message)
+        if reply:
+            return 对话响应(reply=reply)
+        智能体列表 = 存储实例.获取所有智能体()
+        return 对话响应(reply=(
+            "未检测到可用的 AI 后端。\n\n"
+            "如需智能回复，请任选其一：\n"
+            "1. 设置 ANTHROPIC_API_KEY 环境变量\n"
+            "2. 安装 Claude Code CLI: npm i -g @anthropic-ai/claude-code\n\n"
+            f"当前系统状态: 智能体 {len(智能体列表)} 个，流水线 {len(存储实例.获取所有流水线())} 条。"
+        ))
     except Exception as e:
-        logger.error(f"Hermes 对话出错: {e}")
-        return 对话响应(reply="我遇到了一些技术问题，请稍后再试。")
+        logger.error(f"Hermes: {e}")
+        return 对话响应(reply=f"出错: {e}")
