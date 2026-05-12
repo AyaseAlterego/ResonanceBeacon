@@ -42,3 +42,8 @@ async def 就绪检查():
 async def 获取默认密钥():
     """获取桌面端默认API密钥"""
     return {"密钥": "hermes-local-dev-key"}
+
+@router.get("/health")
+async def 健康检查英文():
+    """英文健康检查（用于启动脚本，避免中文编码问题）"""
+    return {"status": "ok"}
