@@ -80,6 +80,13 @@ target/
 *.out
 vendor/
 
+# Build output
+web/out/
+web/dist/
+
+# Worktrees
+.claude/worktrees/
+
 # Rust
 /target/
 Cargo.lock
