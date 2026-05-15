@@ -18,6 +18,15 @@ import type {
   ReadyResponse,
   HermesChatRequest,
   HermesChatResponse,
+  ProjectListResponse,
+  Project,
+  ProjectCreateRequest,
+  ArtifactListResponse,
+  Artifact,
+  ConversationResponse,
+  ChatResponse,
+  StageConfirmResponse,
+  StageRejectResponse,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8765';
@@ -93,5 +102,26 @@ export const api = {
   hermes: {
     chat: (data: HermesChatRequest) =>
       request<HermesChatResponse>('/智能体/hermes/chat', { method: 'POST', body: JSON.stringify(data) }),
+  },
+  project: {
+    list: () => request<ProjectListResponse>('/项目/'),
+    create: (data: ProjectCreateRequest) =>
+      request<Project>('/项目/', { method: 'POST', body: JSON.stringify(data) }),
+    get: (id: string) => request<Project>(`/项目/${id}`),
+    updateStage: (id: string, 阶段: string) =>
+      request<Project>(`/项目/${id}/阶段`, { method: 'PUT', body: JSON.stringify({ 阶段 }) }),
+    confirm: (id: string, 反馈 = '') =>
+      request<StageConfirmResponse>(`/项目/${id}/确认`, { method: 'POST', body: JSON.stringify({ 反馈 }) }),
+    reject: (id: string, 反馈 = '') =>
+      request<StageRejectResponse>(`/项目/${id}/拒绝`, { method: 'POST', body: JSON.stringify({ 反馈 }) }),
+    conversation: {
+      get: (projectId: string) => request<ConversationResponse>(`/项目/${projectId}/对话/`),
+      sendMessage: (projectId: string, 内容: string) =>
+        request<ChatResponse>(`/项目/${projectId}/对话/消息`, { method: 'POST', body: JSON.stringify({ 内容 }) }),
+    },
+    artifacts: {
+      list: (projectId: string) => request<ArtifactListResponse>(`/项目/${projectId}/制品/`),
+      get: (projectId: string, artifactId: string) => request<Artifact>(`/项目/${projectId}/制品/${artifactId}`),
+    },
   },
 };

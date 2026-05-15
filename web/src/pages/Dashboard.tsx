@@ -6,7 +6,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorBoundary from '../components/ErrorBoundary';
-import { GitBranch, Bot, CheckSquare, Play, Rocket, AlertCircle } from 'lucide-react';
+import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -19,6 +19,7 @@ export default function Dashboard() {
   }, []);
 
   const healthQ = useQuery({ queryKey: ['health'], queryFn: api.health.check, refetchInterval: 10000, enabled: backendOnline === true });
+  const projectsQ = useQuery({ queryKey: ['projects'], queryFn: api.project.list, enabled: backendOnline === true });
   const pipelinesQ = useQuery({ queryKey: ['pipelines'], queryFn: api.pipeline.list, enabled: backendOnline === true });
   const agentsQ = useQuery({ queryKey: ['agents'], queryFn: api.agent.list, enabled: backendOnline === true });
   const approvalsQ = useQuery({ queryKey: ['approvals-pending'], queryFn: api.approval.pending, enabled: backendOnline === true });
@@ -87,7 +88,8 @@ export default function Dashboard() {
     );
   }
 
-  const isLoading = pipelinesQ.isLoading || agentsQ.isLoading;
+  const isLoading = projectsQ.isLoading || pipelinesQ.isLoading || agentsQ.isLoading;
+  const projects = projectsQ.data?.项目列表 ?? [];
   const pipelines = pipelinesQ.data?.流水线列表 ?? [];
   const agents = agentsQ.data?.智能体列表 ?? [];
   const pendingCount = approvalsQ.data?.总数 ?? 0;
@@ -100,34 +102,34 @@ export default function Dashboard() {
     <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-white/80">运行总览</h1>
-        <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#6c5ce7]/20 transition-all flex items-center gap-2">
-          <Play className="w-4 h-4" /> 新建流水线
-        </button>
+        <Link to="/projects" className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#6c5ce7]/20 transition-all flex items-center gap-2">
+          <FolderOpen className="w-4 h-4" /> 新建项目
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="活跃项目" value={projects.length} sub="项目" color="text-[#a29bfe]" />
         <StatCard label="运行中" value={running} sub="流水线" color="text-[#54a0ff]" />
-        <StatCard label="已完成" value={completed} sub="流水线" color="text-[#28c840]" />
-        <StatCard label="智能体" value={agentsQ.data?.总数 ?? 0} sub="在线" color="text-[#a29bfe]" />
+        <StatCard label="智能体" value={agentsQ.data?.总数 ?? 0} sub="在线" color="text-[#28c840]" />
         <StatCard label="待审批" value={pendingCount} color="text-[#f59e0b]" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card title="最近流水线" action={<Link to="/pipelines" className="text-xs text-[#a29bfe] hover:text-[#c4b5fd]">查看全部</Link>}>
-          {pipelines.length === 0 ? (
+        <Card title="最近项目" action={<Link to="/projects" className="text-xs text-[#a29bfe] hover:text-[#c4b5fd]">查看全部</Link>}>
+          {projects.length === 0 ? (
             <div className="text-center py-8 text-sm text-[#6b7280]">
-              暂无流水线
+              暂无项目，点击右上角「新建项目」开始
             </div>
           ) : (
             <div className="space-y-2">
-              {pipelines.slice(0, 5).map(p => (
-                <Link key={p.ID} to={`/pipelines/${p.ID}`}
+              {projects.slice(0, 5).map(p => (
+                <Link key={p.ID} to={`/projects/${p.ID}`}
                   className="flex items-center justify-between p-3 rounded-md bg-black/20 hover:bg-[#1a1a2e]/60 transition-colors">
                   <div className="flex items-center gap-3">
-                    <GitBranch className="w-4 h-4 text-[#6b7280]" />
+                    <FolderOpen className="w-4 h-4 text-[#6b7280]" />
                     <span className="text-sm text-white/60">{p.名称}</span>
                   </div>
-                  <StatusBadge status={p.状态} />
+                  <span className="text-xs text-[#a29bfe]">{p.阶段}</span>
                 </Link>
               ))}
             </div>

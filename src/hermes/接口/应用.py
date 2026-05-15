@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import shutil
 import logging
 
-from .路由 import 流水线路由, 智能体路由, 审批路由, 配置路由, 健康路由, 插件市场路由, websocket路由, hermes路由
+from .路由 import 流水线路由, 智能体路由, 审批路由, 配置路由, 健康路由, 插件市场路由, websocket路由, hermes路由, 项目路由, 对话路由, 制品路由
 from .websocket import 管理器
 from .存储 import 存储实例, 智能体记录
 
@@ -79,6 +79,9 @@ def 创建应用() -> FastAPI:
     应用.include_router(插件市场路由.router, prefix="/插件市场", tags=["插件市场"])
     应用.include_router(websocket路由.router, prefix="/ws", tags=["WebSocket"])
     应用.include_router(hermes路由.router, prefix="/智能体/hermes", tags=["Hermes"])
+    应用.include_router(项目路由.router, prefix="/项目", tags=["项目"])
+    应用.include_router(对话路由.router, prefix="/项目", tags=["对话"])
+    应用.include_router(制品路由.router, prefix="/项目", tags=["制品"])
 
     return 应用
 

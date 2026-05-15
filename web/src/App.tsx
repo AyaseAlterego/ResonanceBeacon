@@ -5,6 +5,8 @@ import { ThemeProvider } from './components/theme-provider';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
+import Projects from './pages/Projects';
+import ProjectDetail from './pages/ProjectDetail';
 import Pipelines from './pages/Pipelines';
 import PipelineDetail from './pages/PipelineDetail';
 import Agents from './pages/Agents';
@@ -52,6 +54,8 @@ export default function App() {
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/" element={<Dashboard />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/projects/:id" element={<ProjectDetail />} />
                 <Route path="/pipelines" element={<Pipelines />} />
                 <Route path="/pipelines/:id" element={<PipelineDetail />} />
                 <Route path="/agents" element={<Agents />} />
