@@ -27,6 +27,12 @@ import type {
   ChatResponse,
   StageConfirmResponse,
   StageRejectResponse,
+  KanbanBoard,
+  KanbanCard,
+  CreateCardRequest,
+  UpdateCardRequest,
+  UpdateCardStatusRequest,
+  CardHistoryResponse,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8765';
@@ -123,5 +129,18 @@ export const api = {
       list: (projectId: string) => request<ArtifactListResponse>(`/项目/${projectId}/制品/`),
       get: (projectId: string, artifactId: string) => request<Artifact>(`/项目/${projectId}/制品/${artifactId}`),
     },
+  },
+  kanban: {
+    getProjectBoard: (projectId: string) => request<KanbanBoard>(`/看板/项目/${projectId}`),
+    createCard: (data: CreateCardRequest) =>
+      request<KanbanCard>('/看板/卡片', { method: 'POST', body: JSON.stringify(data) }),
+    getCard: (cardId: string) => request<KanbanCard>(`/看板/卡片/${cardId}`),
+    updateCard: (cardId: string, data: UpdateCardRequest) =>
+      request<KanbanCard>(`/看板/卡片/${cardId}`, { method: 'PUT', body: JSON.stringify(data) }),
+    updateCardStatus: (cardId: string, data: UpdateCardStatusRequest) =>
+      request<Record<string, unknown>>(`/看板/卡片/${cardId}/状态`, { method: 'POST', body: JSON.stringify(data) }),
+    deleteCard: (cardId: string) =>
+      request<Record<string, unknown>>(`/看板/卡片/${cardId}`, { method: 'DELETE' }),
+    getCardHistory: (cardId: string) => request<CardHistoryResponse>(`/看板/卡片/${cardId}/历史`),
   },
 };

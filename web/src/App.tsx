@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
+import KanbanBoardPage from './pages/KanbanBoard';
 import Pipelines from './pages/Pipelines';
 import PipelineDetail from './pages/PipelineDetail';
 import Agents from './pages/Agents';
@@ -56,6 +57,7 @@ export default function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/projects" element={<Projects />} />
                 <Route path="/projects/:id" element={<ProjectDetail />} />
+                <Route path="/projects/:projectId/kanban" element={<KanbanBoardPage />} />
                 <Route path="/pipelines" element={<Pipelines />} />
                 <Route path="/pipelines/:id" element={<PipelineDetail />} />
                 <Route path="/agents" element={<Agents />} />

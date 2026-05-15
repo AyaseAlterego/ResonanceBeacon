@@ -228,3 +228,72 @@ export interface StageRejectResponse {
   阶段: string;
   消息: string;
 }
+
+// Kanban 类型定义
+export type KanbanStatus = 'backlog' | 'in_progress' | 'review' | 'done' | 'cancelled';
+export type Priority = 'critical' | 'high' | 'medium' | 'low';
+
+export interface KanbanCard {
+  ID: string;
+  项目ID: string;
+  标题: string;
+  描述: string;
+  状态: KanbanStatus;
+  优先级: Priority;
+  负责人: string;
+  来源: string;
+  复杂度: string;
+  预估工时: string;
+  等待审批: boolean;
+  关联任务ID: string;
+  关联制品ID列表: string[];
+  创建时间: string;
+  更新时间: string;
+  完成时间: string;
+  元数据: Record<string, unknown>;
+}
+
+export interface KanbanBoard {
+  项目ID: string;
+  backlog: KanbanCard[];
+  in_progress: KanbanCard[];
+  review: KanbanCard[];
+  done: KanbanCard[];
+  cancelled: KanbanCard[];
+}
+
+export interface CreateCardRequest {
+  项目ID: string;
+  标题: string;
+  描述?: string;
+  优先级?: Priority;
+  负责人?: string;
+  来源?: string;
+}
+
+export interface UpdateCardRequest {
+  标题?: string;
+  描述?: string;
+  优先级?: Priority;
+  负责人?: string;
+  元数据?: Record<string, unknown>;
+}
+
+export interface UpdateCardStatusRequest {
+  目标状态: KanbanStatus;
+  原因?: string;
+}
+
+export interface CardHistoryEntry {
+  ID: string;
+  从状态: string;
+  到状态: string;
+  触发者: string;
+  原因: string;
+  时间: string;
+}
+
+export interface CardHistoryResponse {
+  卡片ID: string;
+  历史: CardHistoryEntry[];
+}

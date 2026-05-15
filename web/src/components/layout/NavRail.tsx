@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderOpen,
+  LayoutKanban,
   GitBranch,
   Cpu,
   CheckSquare,
@@ -12,9 +13,9 @@ import {
 const navItems = [
   { to: '/', label: '仪表板', icon: LayoutDashboard },
   { to: '/projects', label: '项目', icon: FolderOpen },
+  { to: '/approvals', label: '审批', icon: CheckSquare },
   { to: '/pipelines', label: '流水线', icon: GitBranch },
   { to: '/agents', label: '智能体', icon: Cpu },
-  { to: '/approvals', label: '审批', icon: CheckSquare },
   { to: '/config', label: '配置', icon: Wrench },
 ];
 

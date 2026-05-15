@@ -6,7 +6,7 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorBoundary from '../components/ErrorBoundary';
-import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle } from 'lucide-react';
+import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle, LayoutKanban, Cpu, Play, Pause } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -44,7 +44,7 @@ export default function Dashboard() {
           </div>
           <h1 className="text-2xl font-bold text-white/80">起源信标</h1>
           <p className="text-sm text-[#6b7280] leading-relaxed">
-            智能流水线开发系统 · Hermes Agent 元智能体调度平台
+            智能流水线开发系统 · Oh My Hermes 编排层
           </p>
           <div className="bg-[#1a1a2e]/60 border border-[#6c5ce7]/10 rounded-xl p-5 text-left space-y-3">
             <div className="flex items-center gap-2 text-sm text-[#f59e0b]">
@@ -65,24 +65,6 @@ export default function Dashboard() {
               重试连接
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-left">
-            <div className="bg-[#1a1a2e]/40 rounded-lg p-3 border border-white/5">
-              <div className="text-[#a29bfe] text-sm font-medium mb-1">流水线</div>
-              <div className="text-[#6b7280] text-xs">定义 → 执行 → 交付</div>
-            </div>
-            <div className="bg-[#1a1a2e]/40 rounded-lg p-3 border border-white/5">
-              <div className="text-[#a29bfe] text-sm font-medium mb-1">智能体</div>
-              <div className="text-[#6b7280] text-xs">Claude Code · OpenCode · Codex</div>
-            </div>
-            <div className="bg-[#1a1a2e]/40 rounded-lg p-3 border border-white/5">
-              <div className="text-[#a29bfe] text-sm font-medium mb-1">审批</div>
-              <div className="text-[#6b7280] text-xs">人工参与 · 安全管控</div>
-            </div>
-            <div className="bg-[#1a1a2e]/40 rounded-lg p-3 border border-white/5">
-              <div className="text-[#a29bfe] text-sm font-medium mb-1">监控</div>
-              <div className="text-[#6b7280] text-xs">实时状态 · 指标追踪</div>
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -102,23 +84,49 @@ export default function Dashboard() {
     <ErrorBoundary><div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-white/80">运行总览</h1>
-        <Link to="/projects" className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#6c5ce7]/20 transition-all flex items-center gap-2">
-          <FolderOpen className="w-4 h-4" /> 新建项目
-        </Link>
+        <div className="flex gap-2">
+          <Link to="/projects" className="px-4 py-2 rounded-lg bg-[#1a1a2e]/60 border border-white/10 text-white text-sm font-medium hover:bg-[#1a1a2e] transition-all flex items-center gap-2">
+            <FolderOpen className="w-4 h-4" /> 项目管理
+          </Link>
+          <Link to="/projects/new" className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#6c5ce7] to-[#a29bfe] text-white text-sm font-medium hover:shadow-lg hover:shadow-[#6c5ce7]/20 transition-all flex items-center gap-2">
+            <Rocket className="w-4 h-4" /> 新建项目
+          </Link>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="活跃项目" value={projects.length} sub="项目" color="text-[#a29bfe]" />
         <StatCard label="运行中" value={running} sub="流水线" color="text-[#54a0ff]" />
         <StatCard label="智能体" value={agentsQ.data?.总数 ?? 0} sub="在线" color="text-[#28c840]" />
         <StatCard label="待审批" value={pendingCount} color="text-[#f59e0b]" />
+        <StatCard label="已完成" value={completed} sub="流水线" color="text-[#28c840]" />
       </div>
 
+      {/* 自主循环状态 */}
+      <Card title="自主循环引擎">
+        <div className="flex items-center justify-between p-3 rounded-md bg-black/20">
+          <div className="flex items-center gap-3">
+            <Cpu className="w-5 h-5 text-[#a29bfe]" />
+            <div>
+              <div className="text-sm text-white/60">Oh My Hermes CTO Loop</div>
+              <div className="text-xs text-[#6b7280]">每小时自动分诊 → 开发 → 审查 → 审批</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#28c840]">运行中</span>
+            <button className="p-1 rounded hover:bg-white/10">
+              <Pause className="w-4 h-4 text-[#6b7280]" />
+            </button>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid lg:grid-cols-2 gap-6">
+        {/* 项目列表 */}
         <Card title="最近项目" action={<Link to="/projects" className="text-xs text-[#a29bfe] hover:text-[#c4b5fd]">查看全部</Link>}>
           {projects.length === 0 ? (
             <div className="text-center py-8 text-sm text-[#6b7280]">
-              暂无项目，点击右上角「新建项目」开始
+              暂无项目，点击「新建项目」开始
             </div>
           ) : (
             <div className="space-y-2">
@@ -129,13 +137,23 @@ export default function Dashboard() {
                     <FolderOpen className="w-4 h-4 text-[#6b7280]" />
                     <span className="text-sm text-white/60">{p.名称}</span>
                   </div>
-                  <span className="text-xs text-[#a29bfe]">{p.阶段}</span>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/projects/${p.ID}/kanban`}
+                      className="p-1 rounded hover:bg-white/10"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <LayoutKanban className="w-4 h-4 text-[#6b7280] hover:text-[#a29bfe]" />
+                    </Link>
+                    <span className="text-xs text-[#a29bfe]">{p.阶段}</span>
+                  </div>
                 </Link>
               ))}
             </div>
           )}
         </Card>
 
+        {/* 智能体状态 */}
         <Card title="智能体状态" action={<Link to="/agents" className="text-xs text-[#a29bfe] hover:text-[#c4b5fd]">查看全部</Link>}>
           {agents.length === 0 ? (
             <div className="text-center py-8 text-sm text-[#6b7280]">
