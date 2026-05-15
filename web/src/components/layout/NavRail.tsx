@@ -2,7 +2,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   FolderOpen,
-  LayoutKanban,
   GitBranch,
   Cpu,
   CheckSquare,

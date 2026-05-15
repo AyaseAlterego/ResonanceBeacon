@@ -7,7 +7,7 @@ import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AutonomousLoopStatus from '../components/AutonomousLoopStatus';
-import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle, LayoutKanban } from 'lucide-react';
+import { Bot, CheckSquare, FolderOpen, Rocket, AlertCircle, Columns3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -130,7 +130,7 @@ export default function Dashboard() {
                       className="p-1 rounded hover:bg-white/10"
                       onClick={e => e.stopPropagation()}
                     >
-                      <LayoutKanban className="w-4 h-4 text-[#6b7280] hover:text-[#a29bfe]" />
+                      <Columns3 className="w-4 h-4 text-[#6b7280] hover:text-[#a29bfe]" />
                     </Link>
                     <span className="text-xs text-[#a29bfe]">{p.阶段}</span>
                   </div>
