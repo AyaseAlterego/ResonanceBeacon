@@ -6,7 +6,8 @@ import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import Loading from '../components/Loading';
 import ErrorBoundary from '../components/ErrorBoundary';
-import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle, LayoutKanban, Cpu, Play, Pause } from 'lucide-react';
+import AutonomousLoopStatus from '../components/AutonomousLoopStatus';
+import { GitBranch, Bot, CheckSquare, FolderOpen, Rocket, AlertCircle, LayoutKanban } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
@@ -104,21 +105,7 @@ export default function Dashboard() {
 
       {/* 自主循环状态 */}
       <Card title="自主循环引擎">
-        <div className="flex items-center justify-between p-3 rounded-md bg-black/20">
-          <div className="flex items-center gap-3">
-            <Cpu className="w-5 h-5 text-[#a29bfe]" />
-            <div>
-              <div className="text-sm text-white/60">Oh My Hermes CTO Loop</div>
-              <div className="text-xs text-[#6b7280]">每小时自动分诊 → 开发 → 审查 → 审批</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[#28c840]">运行中</span>
-            <button className="p-1 rounded hover:bg-white/10">
-              <Pause className="w-4 h-4 text-[#6b7280]" />
-            </button>
-          </div>
-        </div>
+        <AutonomousLoopStatus />
       </Card>
 
       <div className="grid lg:grid-cols-2 gap-6">

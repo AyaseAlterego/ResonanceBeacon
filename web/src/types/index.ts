@@ -297,3 +297,41 @@ export interface CardHistoryResponse {
   卡片ID: string;
   历史: CardHistoryEntry[];
 }
+
+// 自主循环类型定义
+export type AutonomousLoopState =
+  | 'idle'
+  | 'scanning'
+  | 'triaging'
+  | 'selecting'
+  | 'developing'
+  | 'reviewing_security'
+  | 'reviewing_qa'
+  | 'awaiting_approval'
+  | 'deploying'
+  | 'paused'
+  | 'error';
+
+export interface AutonomousLoopStatus {
+  状态: AutonomousLoopState;
+  运行中: boolean;
+  当前卡片ID: string;
+  事件数量: number;
+  配置: {
+    扫描间隔秒: number;
+    自动审批: boolean;
+  };
+}
+
+export interface AutonomousLoopEvent {
+  ID: string;
+  类型: string;
+  描述: string;
+  时间: string;
+  元数据: Record<string, unknown>;
+}
+
+export interface AutonomousLoopEventLog {
+  事件列表: AutonomousLoopEvent[];
+  总数: number;
+}

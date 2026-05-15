@@ -10,13 +10,12 @@ const 优先级颜色: Record<string, string> = {
   low: 'bg-green-500',
 };
 
-const 状态标签: Record<string, string> = {
-  backlog: '待办',
-  in_progress: '进行中',
-  review: '审查中',
-  done: '已完成',
-  cancelled: '已取消',
-};
+const 列定义 = [
+  { key: 'backlog', 标题: 'Backlog', 颜色: 'border-gray-400' },
+  { key: 'in_progress', 标题: 'In Progress', 颜色: 'border-blue-400' },
+  { key: 'review', 标题: 'Review', 颜色: 'border-purple-400' },
+  { key: 'done', 标题: 'Done', 颜色: 'border-green-400' },
+];
 
 export default function KanbanBoardPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -25,7 +24,7 @@ export default function KanbanBoardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [新卡片, set新卡片] = useState({ 标题: '', 描述: '', 优先级: 'medium' });
+  const [新卡片, set新卡片] = useState({ 标题: '', 描述: '', 优先级: 'medium' as const });
 
   useEffect(() => {
     if (projectId) {
@@ -39,7 +38,7 @@ export default function KanbanBoardPage() {
       const 数据 = await api.kanban.getProjectBoard(projectId!);
       set看板(数据);
     } catch (err) {
-      setError('加载看板失败');
+      setError(err instanceof Error ? err.message : '加载看板失败');
     } finally {
       setLoading(false);
     }
@@ -57,16 +56,16 @@ export default function KanbanBoardPage() {
       set新卡片({ 标题: '', 描述: '', 优先级: 'medium' });
       加载看板();
     } catch (err) {
-      setError('创建卡片失败');
+      setError(err instanceof Error ? err.message : '创建卡片失败');
     }
   };
 
   const 转换状态 = async (卡片ID: string, 目标状态: string) => {
     try {
-      await api.kanban.updateCardStatus(卡片ID, { 目标状态, 原因: '手动拖拽' });
+      await api.kanban.updateCardStatus(卡片ID, { 目标状态: 目标状态 as any, 原因: '手动拖拽' });
       加载看板();
     } catch (err) {
-      setError('状态转换失败');
+      setError(err instanceof Error ? err.message : '状态转换失败');
     }
   };
 
@@ -85,13 +84,6 @@ export default function KanbanBoardPage() {
   if (!看板) {
     return <div className="text-gray-500 p-4">暂无看板数据</div>;
   }
-
-  const 列定义 = [
-    { key: 'backlog', 标题: 'Backlog', 颜色: 'border-gray-400' },
-    { key: 'in_progress', 标题: 'In Progress', 颜色: 'border-blue-400' },
-    { key: 'review', 标题: 'Review', 颜色: 'border-purple-400' },
-    { key: 'done', 标题: 'Done', 颜色: 'border-green-400' },
-  ];
 
   return (
     <div className="h-full flex flex-col">
@@ -125,11 +117,11 @@ export default function KanbanBoardPage() {
               <div className="p-3 font-medium text-gray-700 border-b">
                 {列.标题}
                 <span className="ml-2 text-sm text-gray-500">
-                  {看板[列.key as keyof KanbanBoard]?.length || 0}
+                  {(看板 as any)[列.key]?.length || 0}
                 </span>
               </div>
               <div className="p-2 space-y-2 max-h-[calc(100vh-200px)] overflow-y-auto">
-                {(看板[列.key as keyof KanbanBoard] as KanbanCard[] || []).map(卡片 => (
+                {((看板 as any)[列.key] || []).map((卡片: KanbanCard) => (
                   <div
                     key={卡片.ID}
                     className="bg-white p-3 rounded-lg shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
@@ -148,6 +140,41 @@ export default function KanbanBoardPage() {
                       <span>{卡片.负责人}</span>
                       {卡片.等待审批 && (
                         <span className="text-orange-500">等待审批</span>
+                      )}
+                    </div>
+                    {/* 快速操作 */}
+                    <div className="flex gap-1 mt-2">
+                      {列.key === 'backlog' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); 转换状态(卡片.ID, 'in_progress'); }}
+                          className="text-xs px-2 py-1 bg-blue-50 text-blue-600 rounded hover:bg-blue-100"
+                        >
+                          开始 →
+                        </button>
+                      )}
+                      {列.key === 'in_progress' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); 转换状态(卡片.ID, 'review'); }}
+                          className="text-xs px-2 py-1 bg-purple-50 text-purple-600 rounded hover:bg-purple-100"
+                        >
+                          提交审查 →
+                        </button>
+                      )}
+                      {列.key === 'review' && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); 转换状态(卡片.ID, 'done'); }}
+                            className="text-xs px-2 py-1 bg-green-50 text-green-600 rounded hover:bg-green-100"
+                          >
+                            通过
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); 转换状态(卡片.ID, 'in_progress'); }}
+                            className="text-xs px-2 py-1 bg-orange-50 text-orange-600 rounded hover:bg-orange-100"
+                          >
+                            退回
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -188,7 +215,7 @@ export default function KanbanBoardPage() {
                 <label className="block text-sm font-medium mb-1">优先级</label>
                 <select
                   value={新卡片.优先级}
-                  onChange={e => set新卡片({ ...新卡片, 优先级: e.target.value })}
+                  onChange={e => set新卡片({ ...新卡片, 优先级: e.target.value as any })}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="critical">紧急</option>

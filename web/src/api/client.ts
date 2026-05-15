@@ -143,4 +143,15 @@ export const api = {
       request<Record<string, unknown>>(`/看板/卡片/${cardId}`, { method: 'DELETE' }),
     getCardHistory: (cardId: string) => request<CardHistoryResponse>(`/看板/卡片/${cardId}/历史`),
   },
+  autonomousLoop: {
+    getStatus: () => request<AutonomousLoopStatus>('/自主循环/状态'),
+    start: (data?: { 扫描间隔秒?: number }) =>
+      request<Record<string, unknown>>('/自主循环/启动', { method: 'POST', body: JSON.stringify(data ?? {}) }),
+    stop: () => request<Record<string, unknown>>('/自主循环/停止', { method: 'POST' }),
+    pause: () => request<Record<string, unknown>>('/自主循环/暂停', { method: 'POST' }),
+    resume: () => request<Record<string, unknown>>('/自主循环/恢复', { method: 'POST' }),
+    getEventLog: (limit = 50) => request<AutonomousLoopEventLog>(`/自主循环/事件日志?限制=${limit}`),
+    submitApproval: (cardId: string, 响应: string, 反馈 = '') =>
+      request<Record<string, unknown>>(`/自主循环/审批/${cardId}`, { method: 'POST', body: JSON.stringify({ 响应, 反馈 }) }),
+  },
 };

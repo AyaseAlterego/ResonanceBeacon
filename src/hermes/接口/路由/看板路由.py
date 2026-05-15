@@ -7,16 +7,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
+from ..存储 import 存储实例
+
 router = APIRouter(prefix="/看板", tags=["看板"])
-
-# 全局看板状态机（由应用初始化时注入）
-看板状态机实例 = None
-
-
-def 设置看板实例(实例):
-    """设置看板状态机实例"""
-    global 看板状态机实例
-    看板状态机实例 = 实例
 
 
 class 创建卡片请求(BaseModel):
@@ -44,10 +37,11 @@ class 状态转换请求(BaseModel):
 @router.get("/项目/{项目ID}")
 async def 获取项目看板(项目ID: str):
     """获取项目的完整看板状态"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
+    项目 = 存储实例.获取项目(项目ID)
+    if not 项目:
+        raise HTTPException(status_code=404, detail="项目不存在")
 
-    看板状态 = 看板状态机实例.获取看板状态(项目ID)
+    看板状态 = 存储实例.获取项目看板状态(项目ID)
 
     return {
         "项目ID": 项目ID,
@@ -62,8 +56,9 @@ async def 获取项目看板(项目ID: str):
 @router.post("/卡片")
 async def 创建卡片(请求: 创建卡片请求):
     """创建新卡片"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
+    项目 = 存储实例.获取项目(请求.项目ID)
+    if not 项目:
+        raise HTTPException(status_code=404, detail="项目不存在")
 
     卡片数据 = {
         "项目ID": 请求.项目ID,
@@ -74,17 +69,14 @@ async def 创建卡片(请求: 创建卡片请求):
         "来源": 请求.来源,
     }
 
-    卡片 = 看板状态机实例.创建卡片(卡片数据)
+    卡片 = 存储实例.创建Kanban卡片(卡片数据)
     return _卡片到字典(卡片)
 
 
 @router.get("/卡片/{卡片ID}")
 async def 获取卡片(卡片ID: str):
     """获取卡片详情"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
-
-    卡片 = 看板状态机实例.获取卡片(卡片ID)
+    卡片 = 存储实例.获取Kanban卡片(卡片ID)
     if not 卡片:
         raise HTTPException(status_code=404, detail="卡片不存在")
 
@@ -94,11 +86,8 @@ async def 获取卡片(卡片ID: str):
 @router.put("/卡片/{卡片ID}")
 async def 更新卡片(卡片ID: str, 请求: 更新卡片请求):
     """更新卡片"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
-
     更新数据 = 请求.model_dump(exclude_unset=True)
-    卡片 = 看板状态机实例.更新卡片(卡片ID, 更新数据)
+    卡片 = 存储实例.更新Kanban卡片(卡片ID, 更新数据)
 
     if not 卡片:
         raise HTTPException(status_code=404, detail="卡片不存在")
@@ -109,10 +98,7 @@ async def 更新卡片(卡片ID: str, 请求: 更新卡片请求):
 @router.post("/卡片/{卡片ID}/状态")
 async def 转换卡片状态(卡片ID: str, 请求: 状态转换请求):
     """转换卡片状态"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
-
-    结果 = 看板状态机实例.转换状态(
+    结果 = 存储实例.转换Kanban卡片状态(
         卡片ID,
         请求.目标状态,
         触发者="api",
@@ -122,13 +108,18 @@ async def 转换卡片状态(卡片ID: str, 请求: 状态转换请求):
     if not 结果.get("成功"):
         raise HTTPException(status_code=400, detail=结果.get("错误"))
 
+    卡片 = 结果.get("卡片")
+    转换记录 = 结果.get("转换记录")
+
     return {
         "成功": True,
-        "卡片": _卡片到字典(结果.get("卡片")),
+        "卡片": _卡片到字典(卡片),
         "转换记录": {
-            "从状态": 结果.get("转换记录").从状态,
-            "到状态": 结果.get("转换记录").到状态,
-            "时间": 结果.get("转换记录").时间,
+            "从状态": 转换记录.从状态,
+            "到状态": 转换记录.到状态,
+            "触发者": 转换记录.触发者,
+            "原因": 转换记录.原因,
+            "时间": 转换记录.时间,
         },
     }
 
@@ -136,10 +127,7 @@ async def 转换卡片状态(卡片ID: str, 请求: 状态转换请求):
 @router.delete("/卡片/{卡片ID}")
 async def 删除卡片(卡片ID: str):
     """删除卡片"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
-
-    成功 = 看板状态机实例.删除卡片(卡片ID)
+    成功 = 存储实例.删除Kanban卡片(卡片ID)
     if not 成功:
         raise HTTPException(status_code=404, detail="卡片不存在")
 
@@ -149,10 +137,7 @@ async def 删除卡片(卡片ID: str):
 @router.get("/卡片/{卡片ID}/历史")
 async def 获取卡片历史(卡片ID: str):
     """获取卡片状态转换历史"""
-    if not 看板状态机实例:
-        raise HTTPException(status_code=500, detail="看板服务未初始化")
-
-    历史 = 看板状态机实例.获取转换历史(卡片ID)
+    历史 = 存储实例.获取Kanban转换历史(卡片ID)
 
     return {
         "卡片ID": 卡片ID,
@@ -171,7 +156,7 @@ async def 获取卡片历史(卡片ID: str):
 
 
 def _卡片到字典(卡片) -> dict:
-    """将 Kanban卡片 转换为字典"""
+    """将 Kanban卡片记录 转换为字典"""
     return {
         "ID": 卡片.ID,
         "项目ID": 卡片.项目ID,
